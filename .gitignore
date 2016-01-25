@@ -29,3 +29,4 @@ build/*
 website/EO_star.png
 website/paradiseo_logo.png
 
+.vagrant/
