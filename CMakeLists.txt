@@ -82,7 +82,7 @@ set(ENABLE_GNUPLOT "false" CACHE BOOL "Build EO with the GNUplot support (real-t
 set(EDO "false" CACHE BOOL "Build the EDO module")
 set(EDO_USE_LIB "Eigen3" CACHE STRING "Which linear algebra library to use to build EDO ('UBlas' or 'Eigen3', Eigen3 is recommended)")
 set(SMP "false" CACHE BOOL "Build the SMP module")
-set(MPI "false" CACHE BOOL "Build the MPI module")
+set(MPI "true" CACHE BOOL "Build the MPI module")
 
 ## EO Module
 set(EO_MODULE_NAME "Evolving Object")

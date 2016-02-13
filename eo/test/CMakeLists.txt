@@ -76,6 +76,9 @@ foreach (test ${TEST_LIST})
   set ("T_${test}_SOURCES" "${test}.cpp")
 endforeach (test)
 
+if(MPI)
+  add_subdirectory(mpi)
+endif()
 
 if(ENABLE_MINIMAL_CMAKE_TESTING)
 

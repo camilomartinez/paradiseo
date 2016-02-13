@@ -12,6 +12,10 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   config.vm.box_url = "http://files.vagrantup.com/precise32.box"
 
   # Tell Vagrant what commands to run to provision our box
-  config.vm.provision :shell, inline: "sudo apt-get -y install g++ cmake make tcsh"
+  config.vm.provision :shell, inline: "apt-get -y update"
+  # Paradiseo dependencies
+  config.vm.provision :shell, inline: "sudo apt-get -y install g++ cmake make doxygen lcov"
+  #Openmpi
+  config.vm.provision :shell, inline: "sudo apt-get -y install openmpi-bin openmpi-doc libopenmpi-dev"
 
 end
