@@ -41,10 +41,12 @@
 #include <core/moeoVector.h>
 #include <FlowShopObjectiveVector.h>
 
+#include <mpi/eoMpi.h>
+
 /**
  *  Structure of the genotype for the flow-shop scheduling problem: a vector of unsigned int int.
  */
-class FlowShop: public moeoVector < FlowShopObjectiveVector , unsigned int, double , double >
+class FlowShop: public moeoVector < FlowShopObjectiveVector , unsigned int, double , double >, public eoserial::Persistent
 {
 public:
 
@@ -52,6 +54,10 @@ public:
      * class name
      */
     std::string className() const;
+
+    eoserial::Object* pack() const;
+
+    void unpack( const eoserial::Object* obj );
 
 };
 

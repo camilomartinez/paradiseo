@@ -37,7 +37,81 @@
 
 #include <FlowShop.h>
 
+#include <vector>
+
 std::string FlowShop::className() const
 {
     return "FlowShop";
+}
+
+eoserial::Object* FlowShop::pack() const
+{
+    eoserial::Object* obj = new eoserial::Object;
+    obj->add( "array",
+            eoserial::makeArray< std::vector<AtomType>, eoserial::MakeAlgorithm >
+            ( *this )
+            );
+
+    bool invalidVal = invalid();
+    obj->add("invalid", eoserial::make( invalidVal ) );
+    if( !invalidVal )
+    {
+        ObjectiveVector objectiveVectorVal = objectiveVector();
+        obj->add( "objectiveVector",
+            eoserial::makeArray< std::vector<double>, eoserial::MakeAlgorithm >
+            ( objectiveVectorVal )
+            );
+        bool invalidFitnessVal = invalidFitness();
+        obj->add("invalidFitness", eoserial::make( invalidFitnessVal ) );
+        if( !invalidFitnessVal )
+        {
+            Fitness fitnessVal = fitness();
+            obj->add("fitness", eoserial::make( fitnessVal ) );
+        }
+        bool invalidDiversityVal = invalidDiversity();
+        obj->add("invalidDiversity", eoserial::make( invalidDiversityVal ) );
+        if( !invalidDiversityVal )
+        {
+            Diversity diversityVal = diversity();
+            obj->add("diversity", eoserial::make( diversityVal ) );
+        }
+    }
+    return obj;
+}
+
+void FlowShop::unpack( const eoserial::Object* obj )
+{
+    this->clear();
+    eoserial::unpackArray< std::vector<AtomType>, eoserial::Array::UnpackAlgorithm >
+        ( *obj, "array", *this );
+    bool invalid;
+    eoserial::unpack( *obj, "invalid", invalid );
+    if( invalid ) {
+        invalidate();
+    } else {
+        ObjectiveVector objectiveVectorVal;
+        eoserial::unpackArray< std::vector<double>, eoserial::Array::UnpackAlgorithm >
+            ( *obj, "array", objectiveVectorVal );
+        objectiveVector( objectiveVectorVal );
+
+        bool invalidFitness;
+        eoserial::unpack( *obj, "invalidFitness", invalidFitness );
+        if( invalidFitness ) {
+            invalidateFitness();
+        } else {
+            double fitnessVal;
+            eoserial::unpack<double>( *obj, "fitness", fitnessVal );
+            fitness( fitnessVal );
+        }
+
+        bool invalidDiversity;
+        eoserial::unpack( *obj, "invalidDiversity", invalidDiversity );
+        if( invalidDiversity ) {
+            invalidateDiversity();
+        } else {
+            double diversityVal;
+            eoserial::unpack<double>( *obj, "diversity", diversityVal );
+            diversity( diversityVal );
+        }
+    }
 }

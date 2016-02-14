@@ -64,16 +64,66 @@ void make_help(eoParser & _parser);
 
 using namespace std;
 
+/*
+ * Wrapper for HandleResponse: shows the best answer, as it is found.
+ *
+ * Finding the best solution is an associative operation (as it is based on a "min" function, which is associative too)
+ * and that's why we can perform it here. Indeed, the min element of 5 elements is the min element of the 3 first
+ * elements and the min element of the 2 last elements:
+ * min(1, 2, 3, 4, 5) = min( min(1, 2, 3), min(4, 5) )
+ *
+ * This is a reduction. See MapReduce example to have another examples of reduction.
+ */
+struct CatBestAnswers : public eo::mpi::HandleResponseParallelApply<FlowShop>
+{
+    CatBestAnswers()
+    {
+    }
+
+    /*
+        our structure inherits the member _wrapped from HandleResponseFunction,
+        which is a HandleResponseFunction pointer;
+
+        it inherits also the member _d (like Data), which is a pointer to the
+        ParallelApplyData used in the HandleResponseParallelApply&lt;EOT&gt;. Details
+        of this data are contained in the file eoParallelApply. We need just to know that
+        it contains a member assignedTasks which maps a worker rank and the sent slice
+        to be processed by the worker, and a reference to the processed table via the
+        call of the data() function.
+    */
+
+    // if EOT were a template, we would have to do: (thank you C++ :)
+    // using eo::mpi::HandleResponseParallelApply<EOT>::_wrapped;
+    // using eo::mpi::HandleResponseParallelApply<EOT>::d;
+
+    void operator()(int wrkRank)
+    {
+        eo::mpi::ParallelApplyData<FlowShop> * d = _data;
+        // Retrieve informations about the slice processed by the worker
+        int index = d->assignedTasks[wrkRank].index;
+        int size = d->assignedTasks[wrkRank].size;
+        eo::log << eo::quiet << "Worker: " << wrkRank << ", handles " << size << " individuals from index " << index << std::endl;
+        // call to the wrapped function HERE
+        (*_wrapped)( wrkRank );
+    }
+};
 
 int main(int argc, char* argv[])
 {
     try
     {
         eo::mpi::Node::init( argc, argv );
+        // eo::log << eo::setlevel( eo::debug );
+        eo::log << eo::setlevel( eo::quiet );
+
         eoParser parser(argc, argv);  // for user-parameter reading
         eoState state;                // to keep all things allocated
 
+        //make_parallel(parser);
+        // help ?
+        //make_help(parser);
 
+        
         /*** the representation-dependent things ***/
 
         // The fitness evaluation
@@ -84,45 +134,64 @@ int main(int argc, char* argv[])
         eoGenOp<FlowShop>& op = do_make_op(parser, state);
 
 
-        /*** the representation-independent things ***/
+        int rank = eo::mpi::Node::comm().rank();
+        eo::mpi::DynamicAssignmentAlgorithm assign;
+        if( rank == eo::mpi::DEFAULT_MASTER )
+        {
+            /*** the representation-independent things ***/
 
-        // initialization of the population
-        eoPop<FlowShop>& pop = do_make_pop(parser, state, init);
-        // definition of the archive
-        moeoUnboundedArchive<FlowShop> arch;
-        // stopping criteria
-        eoContinue<FlowShop>& term = do_make_continue_moeo(parser, state, eval);
-        // output
-        eoCheckPoint<FlowShop>& checkpoint = do_make_checkpoint_moeo(parser, state, eval, term, pop, arch);
-        // algorithm
-        eoAlgo<FlowShop>& algo = do_make_ea_moeo(parser, state, eval, checkpoint, op, arch);
+            // initialization of the population
+            eoPop<FlowShop>& pop = do_make_pop(parser, state, init);
+            // definition of the archive
+            moeoUnboundedArchive<FlowShop> arch;
+            // stopping criteria
+            eoContinue<FlowShop>& term = do_make_continue_moeo(parser, state, eval);
+            // output
+            eoCheckPoint<FlowShop>& checkpoint = do_make_checkpoint_moeo(parser, state, eval, term, pop, arch);
+            // algorithm
+            eoAlgo<FlowShop>& algo = do_make_ea_moeo(parser, state, eval, checkpoint, op, arch);
+            //MPI requirements
+            eo::mpi::ParallelApplyStore<FlowShop> store( eval, eo::mpi::DEFAULT_MASTER );
+            store.wrapHandleResponse( new CatBestAnswers );
+            
+            eoParallelPopLoopEval<FlowShop> popEval( assign, eo::mpi::DEFAULT_MASTER, &store );
+            eo::log << eo::quiet << "Before first evaluation." << std::endl;
+            popEval( pop, pop );
+            eo::log << eo::quiet << "After first evaluation." << std::endl;
+            pop = do_make_pop(parser, state, init);
+            popEval( pop, pop );
+            eo::log << eo::quiet << "After second evaluation." << std::endl;
 
+            eo::log << eo::quiet << "DONE!" << std::endl;
+        } else
+        {
+            eoPop<FlowShop> pop; // the population doesn't have to be initialized, as it is not used by workers.
+            eoParallelPopLoopEval<FlowShop> popEval( assign, eo::mpi::DEFAULT_MASTER, eval );
+            popEval( pop, pop );
+        }
 
         /*** Go ! ***/
 
-        // help ?
-        make_help(parser);
+        // // first evalution
+        // apply<FlowShop>(eval, pop);
 
-        // first evalution
-        apply<FlowShop>(eval, pop);
+        // // printing of the initial population
+        // cout << "Initial Population\n";
+        // pop.sortedPrintOn(cout);
+        // cout << endl;
 
-        // printing of the initial population
-        cout << "Initial Population\n";
-        pop.sortedPrintOn(cout);
-        cout << endl;
+        // // run the algo
+        // do_run(algo, pop);
 
-        // run the algo
-        do_run(algo, pop);
+        // // printing of the final population
+        // cout << "Final Population\n";
+        // pop.sortedPrintOn(cout);
+        // cout << endl;
 
-        // printing of the final population
-        cout << "Final Population\n";
-        pop.sortedPrintOn(cout);
-        cout << endl;
-
-        // printing of the final archive
-        cout << "Final Archive\n";
-        arch.sortedPrintOn(cout);
-        cout << endl;
+        // // printing of the final archive
+        // cout << "Final Archive\n";
+        // arch.sortedPrintOn(cout);
+        // cout << endl;
 
 
     }
