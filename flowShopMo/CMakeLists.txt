@@ -32,6 +32,13 @@ SET(PACKAGE_VERSION "1.0" CACHE STRING "Package version" FORCE)
 
 # Need to find Doxygen to generate the documentation
 INCLUDE(FindDoxygen)
+# Need to find MPI to use EO-MPI
+find_package(MPI REQUIRED)
+add_definitions(-DWITH_MPI)
+SET(CMAKE_CXX_COMPILE_FLAGS ${CMAKE_CXX_COMPILE_FLAGS} ${MPI_COMPILE_FLAGS})
+SET(CMAKE_CXX_LINK_FLAGS ${CMAKE_CXX_LINK_FLAGS} ${MPI_LINK_FLAGS})
+INCLUDE_DIRECTORIES(${MPI_INCLUDE_PATH})
+#LINK_DIRECTORIES(${MPI_DIR}/lib)
 
 ######################################################################################
 

@@ -5,6 +5,7 @@
 INCLUDE_DIRECTORIES(${PARADISEO_EO_SRC_DIR}/src
                     ${PARADISEO_MO_SRC_DIR}/src
                     ${PARADISEO_MOEO_SRC_DIR}/src
+                    ${PARADISEO_MPI_SRC_DIR}
                     ${flow-shop_SOURCE_DIR}/src)
 
 ######################################################################################
@@ -36,7 +37,7 @@ ADD_DEPENDENCIES(FlowShopMOEA lflowshop)
 ######################################################################################
 
 # Only if you need to link libraries
-TARGET_LINK_LIBRARIES(FlowShopMOEA moeo eo eoutils lflowshop)
+TARGET_LINK_LIBRARIES(FlowShopMOEA moeo eo eoutils ${MPI_LIBRARIES} eoserial eompi lflowshop )
 
 ######################################################################################
 

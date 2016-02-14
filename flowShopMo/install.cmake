@@ -24,6 +24,8 @@ SET(PARADISEO_MOEO_BIN_DIR "${PARADISEO_DIR}moeo/build" CACHE PATH "ParadisEO-MO
 SET(PARADISEO_PEO_SRC_DIR "${PARADISEO_DIR}/peo" CACHE PATH "ParadisEO-PEO source directory" FORCE)
 SET(PARADISEO_PEO_BIN_DIR "${PARADISEO_DIR}/peo/build" CACHE PATH "ParadisEO-PEO binary directory" FORCE)
 
+SET(PARADISEO_MPI_SRC_DIR "${PARADISEO_DIR}/eo/src/mpi" CACHE PATH "ParadisEO-PEO source directory" FORCE)
+
 #########################################################################################################
 
 

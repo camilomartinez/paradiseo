@@ -38,6 +38,8 @@
 
 // moeo general include
 #include <moeo>
+// eo-mpi incluse
+#include <mpi/eoMpi.h>
 // for the creation of an evaluator
 #include <make_eval_FlowShop.h>
 // for the creation of an initializer
@@ -67,7 +69,7 @@ int main(int argc, char* argv[])
 {
     try
     {
-    
+        eo::mpi::Node::init( argc, argv );
         eoParser parser(argc, argv);  // for user-parameter reading
         eoState state;                // to keep all things allocated
 
