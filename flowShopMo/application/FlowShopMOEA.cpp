@@ -102,9 +102,9 @@ struct CatBestAnswers : public eo::mpi::HandleResponseParallelApply<FlowShop>
         // Retrieve informations about the slice processed by the worker
         int index = d->assignedTasks[wrkRank].index;
         int size = d->assignedTasks[wrkRank].size;
-        eo::log << eo::quiet << "Worker: " << wrkRank << ", handles " << size << " individuals from index " << index << std::endl;
-        // call to the wrapped function HERE
+         // call to the wrapped function HERE
         (*_wrapped)( wrkRank );
+        FlowShop instance = d->table()[ index ];
     }
 };
 

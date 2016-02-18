@@ -114,4 +114,6 @@ void FlowShop::unpack( const eoserial::Object* obj )
             diversity( diversityVal );
         }
     }
+    //obj->print(std::cout);
+    //std::cout << *this << std::endl << std::endl;
 }
