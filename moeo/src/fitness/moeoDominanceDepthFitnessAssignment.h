@@ -211,16 +211,6 @@ private:
         std::sort(sortedptrpop.begin(), sortedptrpop.end(), cmp);
         
         
-        //
-        std::cout << std::endl << "sorted pop" << std::endl;
-        std::cout << "====================" << std::endl;
-        for(unsigned int i=0; i<_pop.size(); i++)
-        {
-            std::cout << i << " : " << (*sortedptrpop[i]) << std::endl;
-        }
-        std::cout << "====================" << std::endl;
-        //
-        
         // compute an upper bound on the second objective (1)
         double max_obj1 = std::numeric_limits<double>::min();
         for(unsigned int i=0; i<_pop.size(); i++)

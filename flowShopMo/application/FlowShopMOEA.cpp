@@ -38,8 +38,10 @@
 
 // moeo general include
 #include <moeo>
-// eo-mpi incluse
+// eo-mpi general include
 #include <mpi/eoMpi.h>
+// Execute algo in several nodes
+#include <mpi/eoMultiStart.h>
 // for the creation of an evaluator
 #include <make_eval_FlowShop.h>
 // for the creation of an initializer
@@ -63,6 +65,7 @@ void make_help(eoParser & _parser);
 
 
 using namespace std;
+using namespace eo::mpi;
 
 /*
  * Wrapper for HandleResponse: shows the best answer, as it is found.
@@ -74,7 +77,7 @@ using namespace std;
  *
  * This is a reduction. See MapReduce example to have another examples of reduction.
  */
-struct CatBestAnswers : public eo::mpi::HandleResponseParallelApply<FlowShop>
+struct CatBestAnswers : public HandleResponseParallelApply<FlowShop>
 {
     CatBestAnswers()
     {
@@ -98,7 +101,7 @@ struct CatBestAnswers : public eo::mpi::HandleResponseParallelApply<FlowShop>
 
     void operator()(int wrkRank)
     {
-        eo::mpi::ParallelApplyData<FlowShop> * d = _data;
+        ParallelApplyData<FlowShop> * d = _data;
         // Retrieve informations about the slice processed by the worker
         int index = d->assignedTasks[wrkRank].index;
         int size = d->assignedTasks[wrkRank].size;
@@ -110,9 +113,14 @@ struct CatBestAnswers : public eo::mpi::HandleResponseParallelApply<FlowShop>
 
 int main(int argc, char* argv[])
 {
+    // PARAMETRES
+    // all parameters are hard-coded!
+    const unsigned int SEED = 133742; // seed for random number generator
+    const unsigned int MAX_GEN = 100; // Maximum number of generation before STOP
+
     try
     {
-        eo::mpi::Node::init( argc, argv );
+        Node::init( argc, argv );
         // eo::log << eo::setlevel( eo::debug );
         eo::log << eo::setlevel( eo::quiet );
 
@@ -134,41 +142,60 @@ int main(int argc, char* argv[])
         eoGenOp<FlowShop>& op = do_make_op(parser, state);
 
 
-        int rank = eo::mpi::Node::comm().rank();
-        eo::mpi::DynamicAssignmentAlgorithm assign;
-        if( rank == eo::mpi::DEFAULT_MASTER )
-        {
-            /*** the representation-independent things ***/
+        int rank = Node::comm().rank();
+        DynamicAssignmentAlgorithm assign;
+        
+        // initialization of the population
+        eoPop<FlowShop>& pop = do_make_pop(parser, state, init);
+        // definition of the archive
+        moeoUnboundedArchive<FlowShop> arch;
+        // stopping criteria
+        eoContinue<FlowShop>& term = do_make_continue_moeo(parser, state, eval);
+        // output
+        eoCheckPoint<FlowShop>& checkpoint = do_make_checkpoint_moeo(parser, state, eval, term, pop, arch);
+        // algorithm
+        eoAlgo<FlowShop>& algo = do_make_ea_moeo(parser, state, eval, checkpoint, op, arch);
+        
+        //MPI requirements
+        eoGenContinue<FlowShop> continuator(MAX_GEN);
+        /* Before a worker starts its algorithm, how does it reinits the population?
+         * This one (ReuseSamePopEA) doesn't modify the population after a start, so
+         * the same population is reevaluated on each multistart: the solution tend
+         * to get better and better.
+         */
+        ReuseSamePopEA<FlowShop> resetAlgo( continuator, pop, eval );
+        /**
+         * How to send seeds to the workers, at the beginning of the parallel job?
+         * This functors indicates that seeds should be random values.
+         */
+        GetRandomSeeds<FlowShop> getSeeds( SEED );
+        // Builds the store
+        MultiStartStore<FlowShop> store( algo, DEFAULT_MASTER, resetAlgo, getSeeds);
+        //store.wrapHandleResponse( new CatBestAnswers );
 
-            // initialization of the population
-            eoPop<FlowShop>& pop = do_make_pop(parser, state, init);
-            // definition of the archive
-            moeoUnboundedArchive<FlowShop> arch;
-            // stopping criteria
-            eoContinue<FlowShop>& term = do_make_continue_moeo(parser, state, eval);
-            // output
-            eoCheckPoint<FlowShop>& checkpoint = do_make_checkpoint_moeo(parser, state, eval, term, pop, arch);
-            // algorithm
-            eoAlgo<FlowShop>& algo = do_make_ea_moeo(parser, state, eval, checkpoint, op, arch);
-            //MPI requirements
-            eo::mpi::ParallelApplyStore<FlowShop> store( eval, eo::mpi::DEFAULT_MASTER );
-            store.wrapHandleResponse( new CatBestAnswers );
-            
-            eoParallelPopLoopEval<FlowShop> popEval( assign, eo::mpi::DEFAULT_MASTER, &store );
-            eo::log << eo::quiet << "Before first evaluation." << std::endl;
-            popEval( pop, pop );
-            eo::log << eo::quiet << "After first evaluation." << std::endl;
-            pop = do_make_pop(parser, state, init);
-            popEval( pop, pop );
-            eo::log << eo::quiet << "After second evaluation." << std::endl;
+        // first evalution
+        apply<FlowShop>(eval, pop);
 
-            eo::log << eo::quiet << "DONE!" << std::endl;
-        } else
+        // Creates the multistart job and runs it.
+        // The last argument indicates that we want to launch 5 runs.
+        MultiStart<FlowShop> msjob( assign, DEFAULT_MASTER, store, 1 );
+        msjob.run();
+
+        if( msjob.isMaster() )
         {
-            eoPop<FlowShop> pop; // the population doesn't have to be initialized, as it is not used by workers.
-            eoParallelPopLoopEval<FlowShop> popEval( assign, eo::mpi::DEFAULT_MASTER, eval );
-            popEval( pop, pop );
+            msjob.best_individuals().sort();
+            std::cout << "Global best individual has fitness " << msjob.best_individuals().best_element().fitness() << std::endl;
         }
+
+        MultiStart< FlowShop > msjob10( assign, DEFAULT_MASTER, store, 10 );
+        msjob10.run();
+
+        if( msjob10.isMaster() )
+        {
+            msjob10.best_individuals().sort();
+            std::cout << "Global best individual has fitness " << msjob10.best_individuals().best_element().fitness() << std::endl;
+        }
+        return 0;
 
         /*** Go ! ***/
 
