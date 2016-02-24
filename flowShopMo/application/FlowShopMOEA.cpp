@@ -63,7 +63,6 @@ void make_help(eoParser & _parser);
 // definition of the representation
 #include <FlowShop.h>
 
-
 using namespace std;
 using namespace eo::mpi;
 
@@ -109,6 +108,27 @@ struct CatBestAnswers : public HandleResponseParallelApply<FlowShop>
         (*_wrapped)( wrkRank );
         FlowShop instance = d->table()[ index ];
     }
+};
+
+struct UpdateArchive : public HandleResponseMultiStart<FlowShop>
+{
+    UpdateArchive(moeoUnboundedArchive<FlowShop> & _archive) : archive( _archive )
+    {
+    }
+
+    void operator()(int wrkRank)
+    {
+        FlowShop individual;
+        MultiStartData<FlowShop>& d = *_data;
+        d.comm.recv( wrkRank, eo::mpi::Channel::Messages, individual );
+        cout << "Response from worker " << wrkRank << endl;
+        cout << individual << endl;
+        d.bests.push_back( individual );
+        archive.push_back( individual );
+    }
+
+private:
+    moeoUnboundedArchive<FlowShop> & archive;
 };
 
 int main(int argc, char* argv[])
@@ -171,10 +191,7 @@ int main(int argc, char* argv[])
         GetRandomSeeds<FlowShop> getSeeds( SEED );
         // Builds the store
         MultiStartStore<FlowShop> store( algo, DEFAULT_MASTER, resetAlgo, getSeeds);
-        //store.wrapHandleResponse( new CatBestAnswers );
-
-        // first evalution
-        apply<FlowShop>(eval, pop);
+        store.wrapHandleResponse( new UpdateArchive( arch ) );
 
         // Creates the multistart job and runs it.
         // The last argument indicates that we want to launch 5 runs.
@@ -184,17 +201,20 @@ int main(int argc, char* argv[])
         if( msjob.isMaster() )
         {
             msjob.best_individuals().sort();
-            std::cout << "Global best individual has fitness " << msjob.best_individuals().best_element().fitness() << std::endl;
+            cout << "Global best individual:" << endl;
+            cout << msjob.best_individuals().best_element() << endl;
+            cout << "Archive: size ";
+            arch.sortedPrintOn(cout);
         }
 
-        MultiStart< FlowShop > msjob10( assign, DEFAULT_MASTER, store, 10 );
-        msjob10.run();
+        // MultiStart< FlowShop > msjob10( assign, DEFAULT_MASTER, store, 10 );
+        // msjob10.run();
 
-        if( msjob10.isMaster() )
-        {
-            msjob10.best_individuals().sort();
-            std::cout << "Global best individual has fitness " << msjob10.best_individuals().best_element().fitness() << std::endl;
-        }
+        // if( msjob10.isMaster() )
+        // {
+        //     msjob10.best_individuals().sort();
+        //     std::cout << "Global best individual has fitness " << msjob10.best_individuals().best_element() << std::endl;
+        // }
         return 0;
 
         /*** Go ! ***/

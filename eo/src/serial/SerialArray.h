@@ -131,6 +131,22 @@ namespace eoserial
             };
 
             /**
+             * @brief InPlaceAlgorithm don't add elements, just trust that the vector has proper size
+             *
+             * Assign the unpack element to the given index 
+             */
+            template<typename C>
+                struct InPlaceAlgorithm : public BaseAlgorithm<C>
+            {
+                void operator()( const eoserial::Array& array, unsigned int i, C & container ) const
+                {
+                    typename C::value_type t;
+                    unpack( array, i, t );
+                    container[i] = t;
+                }
+            };            
+
+            /**
              * @brief BaseAlgorithm for retrieving eoserial::Persistent objects.
              *
              * This one should be used to retrieve objects which implement eoserial::Persistent.

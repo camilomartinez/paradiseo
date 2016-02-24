@@ -58,7 +58,7 @@ eoserial::Object* FlowShop::pack() const
     {
         ObjectiveVector objectiveVectorVal = objectiveVector();
         obj->add( "objectiveVector",
-            eoserial::makeArray< std::vector<double>, eoserial::MakeAlgorithm >
+            eoserial::makeArray< ObjectiveVector, eoserial::MakeAlgorithm >
             ( objectiveVectorVal )
             );
         bool invalidFitnessVal = invalidFitness();
@@ -90,8 +90,8 @@ void FlowShop::unpack( const eoserial::Object* obj )
         invalidate();
     } else {
         ObjectiveVector objectiveVectorVal;
-        eoserial::unpackArray< std::vector<double>, eoserial::Array::UnpackAlgorithm >
-            ( *obj, "array", objectiveVectorVal );
+        eoserial::unpackArray< ObjectiveVector, eoserial::Array::InPlaceAlgorithm >
+            ( *obj, "objectiveVector", objectiveVectorVal );
         objectiveVector( objectiveVectorVal );
 
         bool invalidFitness;
@@ -100,7 +100,7 @@ void FlowShop::unpack( const eoserial::Object* obj )
             invalidateFitness();
         } else {
             double fitnessVal;
-            eoserial::unpack<double>( *obj, "fitness", fitnessVal );
+            eoserial::unpack<Fitness>( *obj, "fitness", fitnessVal );
             fitness( fitnessVal );
         }
 
@@ -110,7 +110,7 @@ void FlowShop::unpack( const eoserial::Object* obj )
             invalidateDiversity();
         } else {
             double diversityVal;
-            eoserial::unpack<double>( *obj, "diversity", diversityVal );
+            eoserial::unpack<Diversity>( *obj, "diversity", diversityVal );
             diversity( diversityVal );
         }
     }

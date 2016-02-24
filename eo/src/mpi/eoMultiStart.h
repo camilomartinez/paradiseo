@@ -463,7 +463,7 @@ namespace eo
         {
             ReuseSamePopEA(
                     eoCountContinue<EOT>& continuator,
-                    const eoPop<EOT>& originalPop,
+                    eoPop<EOT>& originalPop,
                     eoEvalFunc<EOT>& eval
                     ) :
                 _continuator( continuator ),
@@ -479,11 +479,10 @@ namespace eo
 
             ReuseSamePopEA(
                     eoCountContinue<EOT>& continuator,
-                    const eoPop<EOT>& originalPop,
+                    eoPop<EOT>& originalPop,
                     eoPopEvalFunc<EOT>& pop_eval
                     ) :
                 _continuator( continuator ),
-                _originalPop( originalPop ),
                 _firstTime( true )
             {
                 pop_eval( _originalPop, _originalPop );
@@ -502,7 +501,7 @@ namespace eo
             protected:
 
             eoCountContinue<EOT>& _continuator;
-            eoPop<EOT> _originalPop;
+            eoPop<EOT>& _originalPop;
             bool _firstTime;
         };
     } // namespace mpi
