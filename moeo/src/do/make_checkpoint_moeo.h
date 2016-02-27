@@ -50,6 +50,7 @@
 #include <metric/moeoContributionMetric.h>
 #include <metric/moeoEntropyMetric.h>
 #include <utils/moeoArchiveUpdater.h>
+#include <utils/moeoArchiveStat.h>
 #include <utils/moeoArchiveObjectiveVectorSavingUpdater.h>
 #include <utils/moeoBinaryMetricSavingUpdater.h>
 
@@ -148,6 +149,15 @@ eoCheckPoint < MOEOT > & do_make_checkpoint_moeo (eoParser & _parser, eoState & 
       _state.storeFunctor(updater);
       checkpoint.add(*updater);
     }
+
+  bool updateArchWithPop = _parser.getORcreateParam(false, "updateArchWithPop", "Update the archive at each gen with the current pop", '\0', "Evolution Engine").value();
+  moeoArchiveStat < MOEOT > * archiveStat;
+  if ( updateArchWithPop )
+    {
+      archiveStat = & _state.storeFunctor(new moeoArchiveStat < MOEOT > (_archive));
+      checkpoint.add(*archiveStat);
+    }
+
   // store the objective vectors contained in the archive every generation
   bool storeArch = _parser.getORcreateParam(false, "storeArch", "Store the archive's objective vectors at each gen.", '\0', "Output").value();
   if (storeArch)

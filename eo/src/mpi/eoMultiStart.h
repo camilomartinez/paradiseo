@@ -504,6 +504,59 @@ namespace eo
             eoPop<EOT>& _originalPop;
             bool _firstTime;
         };
+
+         /**
+         * @brief For a Genetic Algorithm, reuses the same population without
+         * modifying it after a run.
+         *
+         * However, it doesn't need a first population as it is initialized the first
+         * time it is called. That's way we need the desired pop size and an initializer
+         * along with the evaluator.
+         */
+        template< class EOT >
+        struct ReuseSameRandomPopEA : public MultiStartStore<EOT>::ResetAlgo
+        {
+            ReuseSameRandomPopEA(
+                    eoCountContinue<EOT>& continuator,
+                    int popSize,
+                    eoInit<EOT> & init,
+                    eoEvalFunc<EOT>& eval
+                    ) :
+                _continuator( continuator ),
+                _popSize( popSize ),
+                _init( init ),
+                _eval( eval ),
+                _originalPop(),
+                _firstTime( true )
+            {
+            }
+
+            void operator()( eoPop<EOT>& pop )
+            {
+                if( _firstTime )
+                {
+                    // Init pop from the randomizer: need to use the append function
+                    _originalPop.append(_popSize, _init);
+                    for( unsigned i = 0, size = _originalPop.size();
+                            i < size; ++i )
+                    {
+                        _eval(_originalPop[i]);
+                    }
+                    pop = _originalPop;
+                    _firstTime = false;
+                }
+                _continuator.reset();
+            }
+
+        protected:
+
+        eoCountContinue<EOT>& _continuator;
+        int _popSize;
+        eoInit<EOT>& _init;
+        eoEvalFunc<EOT>& _eval;
+        eoPop<EOT> _originalPop;
+        bool _firstTime;
+        };       
     } // namespace mpi
 } // namespace eo
 

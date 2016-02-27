@@ -2,11 +2,12 @@
 ######                 General    ######
 --help=0                                   # -h : Prints this message
 --stopOnUnknownParam=1                     # Stop if unkown param entered
-# --seed=1183379758                        # -S : Random number seed
+--seed=118337975                        # -S : Random number seed
 
 ######    Evolution Engine        ######
 --popSize=20                               # -P : Population Size
---updateArch=1                             # Update the archive at each gen.
+--updateArch=0                             # Update the archive at each gen.
+--updateArchWithPop=1                             # Update the archive at each gen with the current pop.
 --fitness=DomDepth                         # -F : Fitness assignment scheme: Dummy, DomDepth or IndicatorBased
 --indicator=Epsilon                        # -i : Binary indicator for IndicatorBased: Epsilon, Hypervolume
 --rho=1.1                                  # -r : reference point for the hypervolume indicator
@@ -36,9 +37,9 @@
 --BenchmarkFile=instances/020_10_01.txt    # -B : Benchmark file name REQUIRED
 
 ######    Stopping criterion      ######
---maxGen=100                               # -G : Maximum number of generations (0 = none)
+--maxGen=0                                 # -G : Maximum number of generations (0 = none)
 --maxEval=0                                # -E : Maximum number of evaluations (0 = none)
---maxTime=0                                # -T : Maximum running time in seconds (0 = none)
+--maxTime=5                               # -T : Maximum running time in seconds (0 = none)
 --CtrlC=1                                  # -C : Terminate current generation upon Ctrl C
 
 ######    Variation Operators     ######

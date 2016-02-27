@@ -66,48 +66,62 @@ void make_help(eoParser & _parser);
 using namespace std;
 using namespace eo::mpi;
 
-/*
- * Wrapper for HandleResponse: shows the best answer, as it is found.
- *
- * Finding the best solution is an associative operation (as it is based on a "min" function, which is associative too)
- * and that's why we can perform it here. Indeed, the min element of 5 elements is the min element of the 3 first
- * elements and the min element of the 2 last elements:
- * min(1, 2, 3, 4, 5) = min( min(1, 2, 3), min(4, 5) )
- *
- * This is a reduction. See MapReduce example to have another examples of reduction.
- */
-struct CatBestAnswers : public HandleResponseParallelApply<FlowShop>
+struct SendArchive : public ProcessTaskMultiStart<FlowShop>
 {
-    CatBestAnswers()
+    SendArchive(moeoUnboundedArchive<FlowShop> & _archive) : archive( _archive ), runCount(0)
     {
     }
 
-    /*
-        our structure inherits the member _wrapped from HandleResponseFunction,
-        which is a HandleResponseFunction pointer;
-
-        it inherits also the member _d (like Data), which is a pointer to the
-        ParallelApplyData used in the HandleResponseParallelApply&lt;EOT&gt;. Details
-        of this data are contained in the file eoParallelApply. We need just to know that
-        it contains a member assignedTasks which maps a worker rank and the sent slice
-        to be processed by the worker, and a reference to the processed table via the
-        call of the data() function.
-    */
-
-    // if EOT were a template, we would have to do: (thank you C++ :)
-    // using eo::mpi::HandleResponseParallelApply<EOT>::_wrapped;
-    // using eo::mpi::HandleResponseParallelApply<EOT>::d;
-
-    void operator()(int wrkRank)
+    void operator()()
     {
-        ParallelApplyData<FlowShop> * d = _data;
-        // Retrieve informations about the slice processed by the worker
-        int index = d->assignedTasks[wrkRank].index;
-        int size = d->assignedTasks[wrkRank].size;
-         // call to the wrapped function HERE
-        (*_wrapped)( wrkRank );
-        FlowShop instance = d->table()[ index ];
+        _data->resetAlgo( _data->pop );
+        beforeAlgo();
+        _data->algo( _data->pop );
+        logProgress();
+        _data->comm.send( _data->masterRank, eo::mpi::Channel::Messages, archive[0] );
+        _data->comm.send( _data->masterRank, eo::mpi::Channel::Messages, _data->pop.best_element() );
     }
+
+private:
+    void beforeAlgo()
+    {
+        if (runCount == 0 && eo::log.getLevelSelected() >= eo::logging)
+        {
+            int rank = Node::comm().rank();
+            if (rank > 1) {
+                int ignore;
+                _data->comm.recv( rank - 1, eo::mpi::Channel::Messages, ignore );
+            }
+            printPopulation();
+            if ((rank + 1) < Node::comm().size()) {
+                _data->comm.send( rank + 1, eo::mpi::Channel::Messages, 1 );
+            }
+        }
+        ++runCount;
+    }
+
+    void logProgress()
+    {
+        printPopulation();
+        printArchive();
+    }
+
+    void printPopulation()
+    {
+        int rank = Node::comm().rank();
+        eo::log << eo::logging << "[W" << rank << "] Population run #" << runCount << " size: ";
+        _data->pop.printOn(eo::log << eo::logging);
+    }
+
+    void printArchive()
+    {
+        int rank = Node::comm().rank();
+        eo::log << eo::logging << "[W" << rank << "] Archive run #" << runCount << " size: ";
+        archive.printOn(eo::log << eo::logging);
+    } 
+
+    moeoUnboundedArchive<FlowShop> & archive;
+    int runCount;
 };
 
 struct UpdateArchive : public HandleResponseMultiStart<FlowShop>
@@ -121,10 +135,9 @@ struct UpdateArchive : public HandleResponseMultiStart<FlowShop>
         FlowShop individual;
         MultiStartData<FlowShop>& d = *_data;
         d.comm.recv( wrkRank, eo::mpi::Channel::Messages, individual );
-        cout << "Response from worker " << wrkRank << endl;
-        cout << individual << endl;
-        d.bests.push_back( individual );
-        archive.push_back( individual );
+        archive( individual );
+        d.comm.recv( wrkRank, eo::mpi::Channel::Messages, individual );
+        d.bests.push_back( individual );        
     }
 
 private:
@@ -135,9 +148,8 @@ int main(int argc, char* argv[])
 {
     // PARAMETRES
     // all parameters are hard-coded!
-    const unsigned int SEED = 133742; // seed for random number generator
     const unsigned int MAX_GEN = 100; // Maximum number of generation before STOP
-
+    
     try
     {
         Node::init( argc, argv );
@@ -176,23 +188,28 @@ int main(int argc, char* argv[])
         // algorithm
         eoAlgo<FlowShop>& algo = do_make_ea_moeo(parser, state, eval, checkpoint, op, arch);
         
-        //MPI requirements
+        /* MPI requirements
+         * continuator and getSeeds are not used, only here to
+         * comply with the ctor signature
+         */
+
         eoGenContinue<FlowShop> continuator(MAX_GEN);
         /* Before a worker starts its algorithm, how does it reinits the population?
          * This one (ReuseSamePopEA) doesn't modify the population after a start, so
          * the same population is reevaluated on each multistart: the solution tend
          * to get better and better.
          */
-        ReuseSamePopEA<FlowShop> resetAlgo( continuator, pop, eval );
+        ReuseSameRandomPopEA<FlowShop> resetAlgo( continuator, pop.size(), init, eval );
         /**
          * How to send seeds to the workers, at the beginning of the parallel job?
          * This functors indicates that seeds should be random values.
          */
-        GetRandomSeeds<FlowShop> getSeeds( SEED );
+        DummyGetSeeds<FlowShop> getSeeds;
         // Builds the store
         MultiStartStore<FlowShop> store( algo, DEFAULT_MASTER, resetAlgo, getSeeds);
+        store.wrapProcessTask( new SendArchive( arch ) );
         store.wrapHandleResponse( new UpdateArchive( arch ) );
-
+        
         // Creates the multistart job and runs it.
         // The last argument indicates that we want to launch 5 runs.
         MultiStart<FlowShop> msjob( assign, DEFAULT_MASTER, store, 1 );
@@ -201,10 +218,10 @@ int main(int argc, char* argv[])
         if( msjob.isMaster() )
         {
             msjob.best_individuals().sort();
-            cout << "Global best individual:" << endl;
-            cout << msjob.best_individuals().best_element() << endl;
+            cout << endl << "Global best individuals: size ";
+            msjob.best_individuals().printOn(cout);
             cout << "Archive: size ";
-            arch.sortedPrintOn(cout);
+            arch.printOn(cout);
         }
 
         // MultiStart< FlowShop > msjob10( assign, DEFAULT_MASTER, store, 10 );
