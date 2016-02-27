@@ -85,19 +85,13 @@ struct SendArchive : public ProcessTaskMultiStart<FlowShop>
 private:
     void beforeAlgo()
     {
-        if (runCount == 0 && eo::log.getLevelSelected() >= eo::logging)
+        if (runCount == 0)
         {
-            int rank = Node::comm().rank();
-            if (rank > 1) {
-                int ignore;
-                _data->comm.recv( rank - 1, eo::mpi::Channel::Messages, ignore );
-            }
+            // Print initial population
             printPopulation();
-            if ((rank + 1) < Node::comm().size()) {
-                _data->comm.send( rank + 1, eo::mpi::Channel::Messages, 1 );
-            }
         }
         ++runCount;
+        eo::log << eo::logging << std::endl << "[W" << Node::comm().rank() << "] Run #" << runCount << std::endl;        
     }
 
     void logProgress()
@@ -144,17 +138,35 @@ private:
     moeoUnboundedArchive<FlowShop> & archive;
 };
 
+void logToFile() {
+    std::ostringstream logfile;
+    int rank = Node::comm().rank();
+    bool isMaster = rank == DEFAULT_MASTER;
+    logfile << "log_" << (isMaster ? "m_" : "w_") << rank << ".txt";
+    eo::log << eo::file(logfile.str());
+}
+
 int main(int argc, char* argv[])
 {
-    // PARAMETRES
-    // all parameters are hard-coded!
-    const unsigned int MAX_GEN = 100; // Maximum number of generation before STOP
-    
     try
     {
         Node::init( argc, argv );
-        // eo::log << eo::setlevel( eo::debug );
-        eo::log << eo::setlevel( eo::quiet );
+        // General log level
+        // eo::log << eo::setlevel( eo::logging );
+        eo::log << eo::setlevel( eo::debug );
+        int rank = Node::comm().rank();
+        if (rank == DEFAULT_MASTER)
+        {
+            // master specific init
+            eo::log << eo::setlevel( eo::debug );
+            //logToFile();
+        }
+        else
+        {
+            // workers specific init
+            logToFile();
+        }
+
 
         eoParser parser(argc, argv);  // for user-parameter reading
         eoState state;                // to keep all things allocated
@@ -173,33 +185,24 @@ int main(int argc, char* argv[])
         // the variation operators
         eoGenOp<FlowShop>& op = do_make_op(parser, state);
 
-
-        int rank = Node::comm().rank();
-        DynamicAssignmentAlgorithm assign;
-        
         // initialization of the population
         eoPop<FlowShop>& pop = do_make_pop(parser, state, init);
         // definition of the archive
         moeoUnboundedArchive<FlowShop> arch;
         // stopping criteria
-        eoContinue<FlowShop>& term = do_make_continue_moeo(parser, state, eval);
+        eoCombinedContinue<FlowShop>& term = do_make_continue_moeo(parser, state, eval);
         // output
         eoCheckPoint<FlowShop>& checkpoint = do_make_checkpoint_moeo(parser, state, eval, term, pop, arch);
         // algorithm
         eoAlgo<FlowShop>& algo = do_make_ea_moeo(parser, state, eval, checkpoint, op, arch);
         
-        /* MPI requirements
-         * continuator and getSeeds are not used, only here to
-         * comply with the ctor signature
-         */
-
-        eoGenContinue<FlowShop> continuator(MAX_GEN);
+        // MPI requirements
         /* Before a worker starts its algorithm, how does it reinits the population?
          * This one (ReuseSamePopEA) doesn't modify the population after a start, so
          * the same population is reevaluated on each multistart: the solution tend
          * to get better and better.
          */
-        ReuseSameRandomPopEA<FlowShop> resetAlgo( continuator, pop.size(), init, eval );
+        ReuseSameRandomPopEA<FlowShop> resetAlgo( term, pop.size(), init, eval );
         /**
          * How to send seeds to the workers, at the beginning of the parallel job?
          * This functors indicates that seeds should be random values.
@@ -210,54 +213,22 @@ int main(int argc, char* argv[])
         store.wrapProcessTask( new SendArchive( arch ) );
         store.wrapHandleResponse( new UpdateArchive( arch ) );
         
+        DynamicAssignmentAlgorithm assign;
         // Creates the multistart job and runs it.
         // The last argument indicates that we want to launch 5 runs.
-        MultiStart<FlowShop> msjob( assign, DEFAULT_MASTER, store, 1 );
+        MultiStart<FlowShop> msjob( assign, DEFAULT_MASTER, store, 10 );
         msjob.run();
 
         if( msjob.isMaster() )
         {
             msjob.best_individuals().sort();
-            cout << endl << "Global best individuals: size ";
-            msjob.best_individuals().printOn(cout);
-            cout << "Archive: size ";
-            arch.printOn(cout);
+            eo::log << eo::logging << std::endl;
+            eo::log << eo::logging << "Global best individuals: size ";
+            msjob.best_individuals().printOn(eo::log << eo::logging);
+            eo::log << eo::logging << "Archive: size ";
+            arch.printOn(eo::log << eo::logging);
         }
-
-        // MultiStart< FlowShop > msjob10( assign, DEFAULT_MASTER, store, 10 );
-        // msjob10.run();
-
-        // if( msjob10.isMaster() )
-        // {
-        //     msjob10.best_individuals().sort();
-        //     std::cout << "Global best individual has fitness " << msjob10.best_individuals().best_element() << std::endl;
-        // }
         return 0;
-
-        /*** Go ! ***/
-
-        // // first evalution
-        // apply<FlowShop>(eval, pop);
-
-        // // printing of the initial population
-        // cout << "Initial Population\n";
-        // pop.sortedPrintOn(cout);
-        // cout << endl;
-
-        // // run the algo
-        // do_run(algo, pop);
-
-        // // printing of the final population
-        // cout << "Final Population\n";
-        // pop.sortedPrintOn(cout);
-        // cout << endl;
-
-        // // printing of the final archive
-        // cout << "Final Archive\n";
-        // arch.sortedPrintOn(cout);
-        // cout << endl;
-
-
     }
     catch (exception& e)
     {

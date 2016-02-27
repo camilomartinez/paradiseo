@@ -26,6 +26,7 @@
 #define _eoGenContinue_h
 
 #include <eoContinue.h>
+#include <eoResettable.h>
 #include <utils/eoParam.h>
 #include <utils/eoLogger.h>
 
@@ -35,12 +36,13 @@
     @ingroup Continuators
 */
 template< class EOT>
-class eoGenContinue: public eoCountContinue<EOT>, public eoValueParam<unsigned>
+class eoGenContinue: public eoCountContinue<EOT>, public eoValueParam<unsigned>, public eoResettable
 {
 public:
 
     using eoCountContinue<EOT>::thisGeneration;
     using eoCountContinue<EOT>::thisGenerationPlaceholder;
+    using eoResettable::reset;
 
   /// Ctor for setting a
   eoGenContinue( unsigned long _totalGens)
@@ -64,10 +66,16 @@ public:
 
     if (thisGeneration >= repTotalGenerations)
       {
-            eo::log << eo::logging << "STOP in eoGenContinue: Reached maximum number of generations [" << thisGeneration << "/" << repTotalGenerations << "]\n";
+        eo::log << eo::logging << "STOP in eoGenContinue: Reached maximum number of generations [" << thisGeneration << "/" << repTotalGenerations << "]\n";
         return false;
       }
     return true;
+  }
+
+  virtual void reset()
+  {
+    eo::log << eo::progress << "RESET in eoGenContinue after " << thisGeneration << " generations" << std::endl;
+    eoCountContinue<EOT>::reset();
   }
 
   /** Sets the number of generations to reach

@@ -517,7 +517,7 @@ namespace eo
         struct ReuseSameRandomPopEA : public MultiStartStore<EOT>::ResetAlgo
         {
             ReuseSameRandomPopEA(
-                    eoCountContinue<EOT>& continuator,
+                    eoCombinedContinue<EOT> & continuator,
                     int popSize,
                     eoInit<EOT> & init,
                     eoEvalFunc<EOT>& eval
@@ -550,7 +550,7 @@ namespace eo
 
         protected:
 
-        eoCountContinue<EOT>& _continuator;
+        eoCombinedContinue<EOT>& _continuator;
         int _popSize;
         eoInit<EOT>& _init;
         eoEvalFunc<EOT>& _eval;

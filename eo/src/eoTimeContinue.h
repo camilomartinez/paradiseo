@@ -28,6 +28,7 @@
 #include <ctime>
 
 #include <eoContinue.h>
+#include <eoResettable.h>
 #include <utils/eoLogger.h>
 
 /**
@@ -36,7 +37,7 @@
  * @ingroup Continuators
  */
 template < class EOT >
-class eoTimeContinue: public eoContinue<EOT>
+class eoTimeContinue: public eoContinue<EOT>, public eoResettable
 {
 public:
 
@@ -74,6 +75,12 @@ public:
         return "eoTimeContinue";
     }
 
+    virtual void reset()
+    {
+        time_t elapsed = (time_t) difftime(time(NULL), start);
+        eo::log << eo::progress << "RESET in eoTimeContinue after " << elapsed << " seconds" << std::endl;
+        start = time(NULL);
+    }
 
 private:
 

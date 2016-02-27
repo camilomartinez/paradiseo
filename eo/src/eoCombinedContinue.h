@@ -45,7 +45,7 @@ Authors :
 @ingroup Combination
 */
 template< class EOT>
-class eoCombinedContinue: public eoContinue<EOT>, public std::vector<eoContinue<EOT>* > {
+class eoCombinedContinue: public eoContinue<EOT>, public std::vector<eoContinue<EOT>* >, public eoResettable {
 public:
 
   /// Define Fitness
@@ -76,6 +76,22 @@ public:
     this->push_back(&_cont);
   }
 
+  void addResettable(eoResettable * _reset)
+  {
+    resettables.push_back(_reset);
+  }
+
+  virtual void reset()
+  {
+    for (unsigned i=0; i < resettables.size(); ++i) {
+
+      if (resettables[i] != NULL)
+      {
+        resettables[i]->reset();
+      }
+    }
+  }
+
   /* FIXME remove in next release
   void removeLast(void)
   {
@@ -99,8 +115,8 @@ public:
 
   virtual std::string className(void) const { return "eoCombinedContinue"; }
 
-//private:
-//  std::vector<eoContinue<EOT>*>    continuators;
+private:
+  std::vector<eoResettable*>    resettables;
 };
 
 #endif

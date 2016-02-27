@@ -28,6 +28,7 @@
 #define eoEvalFuncCounter_H
 
 #include <eoEvalFunc.h>
+#include <eoResettable.h>
 #include <utils/eoParam.h>
 
 /**
@@ -35,7 +36,7 @@ Counts the number of evaluations actually performed.
 
 @ingroup Evaluation
 */
-template<class EOT> class eoEvalFuncCounter : public eoEvalFunc<EOT>, public eoValueParam<unsigned long>
+template<class EOT> class eoEvalFuncCounter : public eoEvalFunc<EOT>, public eoValueParam<unsigned long>, public eoResettable
 {
     public :
         eoEvalFuncCounter(eoEvalFunc<EOT>& _func, std::string _name = "Eval. ")
@@ -48,6 +49,12 @@ template<class EOT> class eoEvalFuncCounter : public eoEvalFunc<EOT>, public eoV
                 value()++;
                 func(_eo);
             }
+        }
+
+        virtual void reset()
+        {
+            eo::log << eo::progress << "RESET in eoEvalFuncCounter after " << value() << " evaluations" << std::endl;
+            value() = 0;
         }
 
     protected :

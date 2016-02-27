@@ -73,7 +73,7 @@ eoCombinedContinue<MOEOT> * make_combinedContinue(eoCombinedContinue<MOEOT> *_co
  * @param _eval the funtions evaluator
  */
 template <class MOEOT>
-eoContinue<MOEOT> & do_make_continue_moeo(eoParser& _parser, eoState& _state, eoEvalFuncCounter<MOEOT> & _eval)
+eoCombinedContinue<MOEOT> & do_make_continue_moeo(eoParser& _parser, eoState& _state, eoEvalFuncCounter<MOEOT> & _eval)
 {
   // the combined continue - to be filled
   eoCombinedContinue<MOEOT> *continuator = NULL;
@@ -86,6 +86,7 @@ eoContinue<MOEOT> & do_make_continue_moeo(eoParser& _parser, eoState& _state, eo
       _state.storeFunctor(genCont);
       // and "add" to combined
       continuator = make_combinedContinue<MOEOT>(continuator, genCont);
+      continuator->addResettable(genCont);
     }
   // maxEval
   eoValueParam<unsigned long>& maxEvalParam = _parser.getORcreateParam((unsigned long)(0), "maxEval", "Maximum number of evaluations (0 = none)", 'E', "Stopping criterion");
@@ -95,6 +96,7 @@ eoContinue<MOEOT> & do_make_continue_moeo(eoParser& _parser, eoState& _state, eo
       _state.storeFunctor(evalCont);
       // and "add" to combined
       continuator = make_combinedContinue<MOEOT>(continuator, evalCont);
+      continuator->addResettable(&_eval);
     }
   // maxTime
   eoValueParam<unsigned long>& maxTimeParam = _parser.getORcreateParam((unsigned long)(0), "maxTime", "Maximum running time in seconds (0 = none)", 'T', "Stopping criterion");
@@ -104,6 +106,7 @@ eoContinue<MOEOT> & do_make_continue_moeo(eoParser& _parser, eoState& _state, eo
       _state.storeFunctor(timeCont);
       // and "add" to combined
       continuator = make_combinedContinue<MOEOT>(continuator, timeCont);
+      continuator->addResettable(timeCont);
     }
   // CtrlC
 #ifndef _MSC_VER
