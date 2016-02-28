@@ -2,12 +2,12 @@
 ######                 General    ######
 --help=0                                   # -h : Prints this message
 --stopOnUnknownParam=1                     # Stop if unkown param entered
---seed=118337975                        # -S : Random number seed
+--seed=118337975                           # -S : Random number seed
 
 ######    Evolution Engine        ######
 --popSize=20                               # -P : Population Size
 --updateArch=0                             # Update the archive at each gen.
---updateArchWithPop=1                             # Update the archive at each gen with the current pop.
+--updateArchWithPop=1                      # Update the archive at each gen with the current pop.
 --fitness=DomDepth                         # -F : Fitness assignment scheme: Dummy, DomDepth or IndicatorBased
 --indicator=Epsilon                        # -i : Binary indicator for IndicatorBased: Epsilon, Hypervolume
 --rho=1.1                                  # -r : reference point for the hypervolume indicator
@@ -29,7 +29,7 @@
 ######    Persistence             ######
 --Load=                                    # -L : A save file to restart from
 --recomputeFitness=0                       # -r : Recompute the fitness after re-loading the pop.?
-#--saveFrequency=                           # Save every F generation (0 = only final state, absent = never)
+#--saveFrequency=                          # Save every F generation (0 = only final state, absent = never)
 --saveTimeInterval=0                       # Save every T seconds (0 or absent = never)
 --status=./FlowShopEA.status               # Status file
 

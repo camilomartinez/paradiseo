@@ -24,6 +24,7 @@ SET (flow-shop_SOURCES	FlowShopBenchmarkParser.cpp
 			FlowShopOpCrossoverQuad.cpp 
 			FlowShopOpMutationExchange.cpp 
 			FlowShopOpMutationShift.cpp 
+            FlowShopSerializablePop.cpp
 			FlowShop.cpp)
 
 ADD_LIBRARY(lflowshop STATIC ${flow-shop_SOURCES})

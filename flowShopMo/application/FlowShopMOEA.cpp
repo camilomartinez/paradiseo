@@ -62,27 +62,57 @@
 void make_help(eoParser & _parser);
 // definition of the representation
 #include <FlowShop.h>
+// serializable population
+#include <FlowShopSerializablePop.h>
 
 using namespace std;
 using namespace eo::mpi;
 
-struct SendArchive : public ProcessTaskMultiStart<FlowShop>
+struct SendArchive : public SendTaskMultiStart<FlowShop>
 {
-    SendArchive(moeoUnboundedArchive<FlowShop> & _archive) : archive( _archive ), runCount(0)
+public:
+    using SendTaskFunction< MultiStartData< FlowShop > >::_data;
+
+    SendArchive(moeoUnboundedArchive<FlowShop> & _archive) : archive( _archive )
+    {
+    }
+
+    void operator()( int wrkRank )
+    {
+        --(_data->runs);
+        FlowShopSerializablePop serializablePop(archive);
+        _data->comm.send( wrkRank, eo::mpi::Channel::Messages, serializablePop );
+    }
+
+private:
+    moeoUnboundedArchive<FlowShop> & archive;
+};
+
+struct RunAlgo : public ProcessTaskMultiStart<FlowShop>
+{
+    RunAlgo(moeoUnboundedArchive<FlowShop> & _archive) : archive( _archive ), runCount(0)
     {
     }
 
     void operator()()
     {
         _data->resetAlgo( _data->pop );
+        updateArchive();
         beforeAlgo();
         _data->algo( _data->pop );
         logProgress();
-        _data->comm.send( _data->masterRank, eo::mpi::Channel::Messages, archive[0] );
-        _data->comm.send( _data->masterRank, eo::mpi::Channel::Messages, _data->pop.best_element() );
+        sendArchive();
     }
 
 private:
+    void updateArchive()
+    {
+        // Receive master archive
+        FlowShopSerializablePop masterArchive(archive);
+        _data->comm.recv( _data->masterRank, eo::mpi::Channel::Messages, masterArchive );
+        archive( masterArchive );
+    }
+
     void beforeAlgo()
     {
         if (runCount == 0)
@@ -112,7 +142,13 @@ private:
         int rank = Node::comm().rank();
         eo::log << eo::logging << "[W" << rank << "] Archive run #" << runCount << " size: ";
         archive.printOn(eo::log << eo::logging);
-    } 
+    }
+
+    void sendArchive()
+    {
+        FlowShopSerializablePop workerArchive(archive);
+        _data->comm.send( _data->masterRank, eo::mpi::Channel::Messages, workerArchive );
+    }
 
     moeoUnboundedArchive<FlowShop> & archive;
     int runCount;
@@ -126,12 +162,10 @@ struct UpdateArchive : public HandleResponseMultiStart<FlowShop>
 
     void operator()(int wrkRank)
     {
-        FlowShop individual;
+        FlowShopSerializablePop serializablePop;
         MultiStartData<FlowShop>& d = *_data;
-        d.comm.recv( wrkRank, eo::mpi::Channel::Messages, individual );
-        archive( individual );
-        d.comm.recv( wrkRank, eo::mpi::Channel::Messages, individual );
-        d.bests.push_back( individual );        
+        d.comm.recv( wrkRank, eo::mpi::Channel::Messages, serializablePop );
+        archive( serializablePop );        
     }
 
 private:
@@ -210,23 +244,21 @@ int main(int argc, char* argv[])
         DummyGetSeeds<FlowShop> getSeeds;
         // Builds the store
         MultiStartStore<FlowShop> store( algo, DEFAULT_MASTER, resetAlgo, getSeeds);
-        store.wrapProcessTask( new SendArchive( arch ) );
+        store.wrapSendTask( new SendArchive( arch ) );
+        store.wrapProcessTask( new RunAlgo( arch ) );
         store.wrapHandleResponse( new UpdateArchive( arch ) );
         
         DynamicAssignmentAlgorithm assign;
         // Creates the multistart job and runs it.
-        // The last argument indicates that we want to launch 5 runs.
-        MultiStart<FlowShop> msjob( assign, DEFAULT_MASTER, store, 10 );
+        // The last argument indicates how many runs to launch.
+        MultiStart<FlowShop> msjob( assign, DEFAULT_MASTER, store, 20 );
         msjob.run();
 
         if( msjob.isMaster() )
         {
-            msjob.best_individuals().sort();
             eo::log << eo::logging << std::endl;
-            eo::log << eo::logging << "Global best individuals: size ";
-            msjob.best_individuals().printOn(eo::log << eo::logging);
             eo::log << eo::logging << "Archive: size ";
-            arch.printOn(eo::log << eo::logging);
+            arch.sortedPrintOn(eo::log << eo::logging);
         }
         return 0;
     }
