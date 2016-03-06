@@ -31,6 +31,7 @@ Authors :
 #define _eoCombinedContinue_h
 
 #include <eoContinue.h>
+#include <eoResettable.h>
 
 /**
     Combined continuators - logical AND:

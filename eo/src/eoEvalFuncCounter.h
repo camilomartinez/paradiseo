@@ -30,6 +30,7 @@
 #include <eoEvalFunc.h>
 #include <eoResettable.h>
 #include <utils/eoParam.h>
+#include <utils/eoLogger.h>
 
 /**
 Counts the number of evaluations actually performed.
