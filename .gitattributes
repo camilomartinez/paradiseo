@@ -1,1 +1,2 @@
 flowShopRun.sh eol=lf
+*.txt text eol=lf
