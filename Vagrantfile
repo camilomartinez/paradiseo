@@ -6,10 +6,10 @@ VAGRANTFILE_API_VERSION = "2"
 
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   # Assign the box to start from:
-  config.vm.box = "precise32"
+  config.vm.box = "ubuntu/trusty64"
 
   # Assign where to find the box if not already available locally:
-  config.vm.box_url = "http://files.vagrantup.com/precise32.box"
+  config.vm.box_url = "https://atlas.hashicorp.com/ubuntu/trusty64"
 
   # Tell Vagrant what commands to run to provision our box
   config.vm.provision :shell, inline: "apt-get -y update"
