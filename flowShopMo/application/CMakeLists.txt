@@ -37,7 +37,7 @@ ADD_DEPENDENCIES(FlowShopMOEA lflowshop)
 ######################################################################################
 
 # Only if you need to link libraries
-TARGET_LINK_LIBRARIES(FlowShopMOEA moeo eo eoutils ${MPI_LIBRARIES} eoserial eompi lflowshop )
+TARGET_LINK_LIBRARIES(FlowShopMOEA moeo eo eoutils ${MPI_LIBRARIES} eompi eoserial lflowshop )
 
 ######################################################################################
 
