@@ -72,7 +72,7 @@ void FlowShop::unpack( const eoserial::Object* obj )
     if( invalid ) {
         invalidate();
     } else {
-        double fitnessVal;
+        Fitness fitnessVal;
         eoserial::unpack<Fitness>( *obj, "fitness", fitnessVal );
         fitness( fitnessVal );
     }

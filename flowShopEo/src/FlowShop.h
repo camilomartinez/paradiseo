@@ -43,9 +43,9 @@
 #include <serial/eoSerial.h>
 
 /**
- *  Structure of the genotype for the flow-shop scheduling problem: a vector of unsigned int int.
+ *  Structure of the genotype for the flow-shop scheduling problem: a vector of unsigned int.
  */
-class FlowShop: public eoVector < double , unsigned int >, public eoserial::Persistent
+class FlowShop: public eoVector < eoMinimizingFitness , unsigned int >, public eoserial::Persistent
 {
 public:
 
