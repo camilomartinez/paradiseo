@@ -228,7 +228,7 @@ public:
 
 
     // Now OK to erase some losers
-    std::cout << "oldSize - _newsize: " << oldSize - _newsize << std::endl;
+    // std::cout << "oldSize - _newsize: " << oldSize - _newsize << std::endl;
     for (unsigned i=0; i<oldSize - _newsize; i++)
       {
         //OLDCODE EOT & eo = inverse_deterministic_tournament<EOT>(_newgen, t_size);

@@ -3,19 +3,19 @@
 ### GENERAL ########################################################################
 # --help=0                                 # -h : Prints this message
 # --stopOnUnknownParam=1                   # Stop if unkown param entered
---seed=118337975                           # -S : Random number seed
+#--seed=118337975                           # -S : Random number seed
 
 ### EVOLUTION ENGINE ###############################################################
 # --popSize=20                             # -P : Population Size
-# --selection=DetTour(2)                   # -S : Selection: DetTour(T), StochTour(t), Roulette, Ranking(p,e) or Sequential(ordered/unordered)
-# --nbOffspring=100%                       # -O : Nb of offspring (percentage or absolute)
-# --replacement=Comma                      # -R : Replacement: Comma, Plus or EPTour(T), SSGAWorst, SSGADet(T), SSGAStoch(t)
+--selection=DetTour(2)                     # -S : Selection: DetTour(T), StochTour(t), Roulette, Ranking(p,e) or Sequential(ordered/unordered)
+--nbOffspring=2                            # -O : Nb of offspring (percentage or absolute)
+--replacement=SSGADet(2)                   # -R : Replacement: Comma, Plus or EPTour(T), SSGAWorst, SSGADet(T), SSGAStoch(t)
 --weakElitism=1                            # -w : Old best parent replaces new worst offspring *if necessary*
 
 ### OUTPUT #########################################################################
 --useEval=0                                # Use nb of eval. as counter (vs nb of gen.)
 # --useTime=1                              # Display time (s) every generation
-# --printBestStat=1                        # Print Best/avg/stdev every gen.
+--printBestStat=0                          # Print Best/avg/stdev every gen.
 # --printPop=0                             # Print sorted pop. every gen.
 
 ### OUTPUT - DISK ##################################################################
@@ -38,12 +38,12 @@
 --BenchmarkFile=instances/ta001.txt        # -B : Benchmark file name REQUIRED 
 
 ### STOPPING CRITERION #############################################################
---maxGen=10                              # -G : Maximum number of generations () = none)
+--maxGen=100000                            # -G : Maximum number of generations () = none)
 # --steadyGen=100                          # -s : Number of generations with no improvement
 # --minGen=0                               # -g : Minimum number of generations
---maxEval=50000                            # -E : Maximum number of evaluations (0 = none)
+--maxEval=0                                # -E : Maximum number of evaluations (0 = none)
 # --targetFitness=0                        # -T : Stop when fitness reaches
---maxTime=5                                # -T : Maximum running time in seconds (0 = none)
+--maxTime=60                               # -T : Maximum running time in seconds (0 = none)
 --CtrlC=1                                  # -C : Terminate current generation upon Ctrl C
 # --monitor-with-CtrlC=0                   # Monitor current generation upon Ctrl C
 

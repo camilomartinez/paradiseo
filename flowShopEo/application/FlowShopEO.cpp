@@ -24,11 +24,106 @@
 void make_help(eoParser & _parser);
 // definition of the representation
 #include <FlowShop.h>
-// serializable population
-#include <FlowShopSerializablePop.h>
 
 using namespace std;
 using namespace eo::mpi;
+
+struct SendBest : public SendTaskMultiStart<FlowShop>
+{
+public:
+    using SendTaskFunction< MultiStartData< FlowShop > >::_data;
+
+    void operator()( int wrkRank )
+    {
+        --(_data->runs);
+        sendBestIndividual(wrkRank);
+    }
+
+private:
+    void sendBestIndividual(int wrkRank)
+    {
+        FlowShop individual;
+        // Any individual received so far?        
+        if (_data->bests.size() > 0)
+        {
+            // Send the best so far
+            individual = _data->bests.best_element();
+        }
+        _data->comm.send( wrkRank, eo::mpi::Channel::Messages, individual );
+    }
+};
+
+struct RunAlgo : public ProcessTaskMultiStart<FlowShop>
+{
+    RunAlgo() : runCount(0)
+    {
+    }
+
+    void operator()()
+    {
+        _data->resetAlgo( _data->pop );
+        updateBest();
+        beforeAlgo();
+        _data->algo( _data->pop );
+        logProgress();
+        sendBest();
+    }
+
+private:
+    void updateBest()
+    {
+        // Receive best element
+        FlowShop globalBest;
+        _data->comm.recv( _data->masterRank, eo::mpi::Channel::Messages, globalBest );
+        // Update if better, similar to weak elitism
+        // Check if received individual is valid and if local is worse (always maximizing)
+        if (!globalBest.invalid() && _data->pop.best_element() < globalBest)
+        {
+            eo::log << eo::logging << "Updating best fitness with global best " << globalBest.fitness();
+            eo::log << eo::logging << ", previous best was " << _data->pop.best_element().fitness() << std::endl;
+            // Replace worst element
+            typename eoPop<FlowShop>::iterator itWorse = _data->pop.it_worse_element();
+            (*itWorse) = globalBest;
+        }
+    }
+
+    void beforeAlgo()
+    {
+        if (runCount == 0)
+        {
+            // Print initial population
+            printPopulation();
+        }
+        ++runCount;
+        eo::log << eo::logging << std::endl << "[W" << Node::comm().rank() << "] Run #" << runCount << std::endl;        
+    }
+
+    void logProgress()
+    {
+        printPopulation();
+        printBest();
+    }
+
+    void printPopulation()
+    {
+        int rank = Node::comm().rank();
+        eo::log << eo::logging << "[W" << rank << "] Population run #" << runCount << " size: ";
+        _data->pop.printOn(eo::log << eo::logging);
+    }
+
+    void printBest()
+    {
+        int rank = Node::comm().rank();
+        eo::log << eo::logging << "[W" << rank << "] Best fitness run #" << runCount << " " << _data->pop.best_element().fitness() << std::endl;
+    }
+
+    void sendBest()
+    {
+        _data->comm.send( _data->masterRank, eo::mpi::Channel::Messages, _data->pop.best_element() );
+    }
+
+    int runCount;
+};
 
 void logToFile() {
     std::ostringstream logfile;
@@ -97,11 +192,13 @@ int main(int argc, char* argv[])
         DummyGetSeeds<FlowShop> getSeeds;
         // Builds the store
         MultiStartStore<FlowShop> store( algo, DEFAULT_MASTER, resetAlgo, getSeeds);
+        store.wrapSendTask( new SendBest() );
+        store.wrapProcessTask( new RunAlgo() );
         
         DynamicAssignmentAlgorithm assign;
         // Creates the multistart job and runs it.
         // The last argument indicates how many runs to launch.
-        MultiStart<FlowShop> msjob( assign, DEFAULT_MASTER, store, 1 );
+        MultiStart<FlowShop> msjob( assign, DEFAULT_MASTER, store, 10 );
         msjob.run();
 
         if( msjob.isMaster() )
