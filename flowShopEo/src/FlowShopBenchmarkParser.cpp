@@ -86,23 +86,22 @@ void FlowShopBenchmarkParser::init(const std::string _benchmarkFileName)
     if (! inputFile)
     	throw std::runtime_error("*** ERROR : Unable to open the benchmark file");
     getline(inputFile, buffer, '\n');
-    end = buffer.find_first_of(" ");
-    // number of jobs (N)
-    N = atoi(buffer.substr(0, start).data());
     start = buffer.find_first_not_of(" ");
+    end = buffer.find_first_of(" ", start);
+    // number of jobs (N)
+    N = atoi(buffer.substr(start, end-start).data());
+    start = buffer.find_first_not_of(" ", end);
     end = buffer.find_first_of(" ", start);
     // number of machines M
     M = atoi(buffer.substr(start, end-start).data());
-    // processing times and due-dates
+    // processing times
     p = std::vector< std::vector<unsigned int> >(M, std::vector<unsigned int>(N));
-    // for each job...
-    for (unsigned int j=0 ; j<N ; j++) {
-        // index of the job (<=> j)
-        getline(inputFile, buffer, '\n');
-        // processing times of the job j on each machine
+    // for each machine...
+    for (unsigned int i=0 ; i<M ; i++) {
+        // processing times of the machine i for each job
         getline(inputFile, buffer, '\n');
         start = buffer.find_first_not_of(" ");
-        for (unsigned int i=0 ; i<M ; i++) {
+        for (unsigned int j=0 ; j<N ; j++) {
             end = buffer.find_first_of(" ", start);
             p[i][j] = atoi(buffer.substr(start, end-start).data());
             start = buffer.find_first_not_of(" ", end);
