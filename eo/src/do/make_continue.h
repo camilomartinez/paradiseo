@@ -39,6 +39,7 @@ It can then be instantiated, and compiled on its own for a given EOType
 #include <eoSteadyFitContinue.h>
 #include <eoEvalContinue.h>
 #include <eoFitContinue.h>
+#include <eoTimeContinue.h>
 #ifndef _MSC_VER
 #include <eoCtrlCContinue.h>  // CtrlC handling (using 2 global variables!)
 #endif
@@ -67,7 +68,7 @@ eoCombinedContinue<Indi> * make_combinedContinue(eoCombinedContinue<Indi> *_comb
  * @ingroup Builders
  */
 template <class Indi>
-eoContinue<Indi> & do_make_continue(eoParser& _parser, eoState& _state, eoEvalFuncCounter<Indi> & _eval)
+eoCombinedContinue<Indi> & do_make_continue(eoParser& _parser, eoState& _state, eoEvalFuncCounter<Indi> & _eval)
 {
   //////////// Stopping criterion ///////////////////
   // the combined continue - to be filled
@@ -85,6 +86,7 @@ eoContinue<Indi> & do_make_continue(eoParser& _parser, eoState& _state, eoEvalFu
         _state.storeFunctor(genCont);
         // and "add" to combined
         continuator = make_combinedContinue<Indi>(continuator, genCont);
+        continuator->addResettable(genCont);
       }
 
   // the steadyGen continue - only if user imput
@@ -112,6 +114,7 @@ eoContinue<Indi> & do_make_continue(eoParser& _parser, eoState& _state, eoEvalFu
         _state.storeFunctor(evalCont);
         // and "add" to combined
         continuator = make_combinedContinue<Indi>(continuator, evalCont);
+        continuator->addResettable(&_eval);
       }
     /*
   // the steadyEval continue - only if user imput
@@ -139,6 +142,16 @@ eoContinue<Indi> & do_make_continue(eoParser& _parser, eoState& _state, eoEvalFu
         // add to combinedContinue
         continuator = make_combinedContinue<Indi>(continuator, fitCont);
       }
+    // maxTime
+    eoValueParam<unsigned long>& maxTimeParam = _parser.getORcreateParam((unsigned long)(0), "maxTime", "Maximum running time in seconds (0 = none)", 'T', "Stopping criterion");
+    if (maxTimeParam.value()) // positive: -> define and store
+    {
+      eoTimeContinue<Indi> *timeCont = new eoTimeContinue<Indi>(maxTimeParam.value());
+      _state.storeFunctor(timeCont);
+      // and "add" to combined
+      continuator = make_combinedContinue<Indi>(continuator, timeCont);
+      continuator->addResettable(timeCont);
+    }
 
 #ifndef _MSC_VER
     // the CtrlC interception (Linux only I'm afraid)
