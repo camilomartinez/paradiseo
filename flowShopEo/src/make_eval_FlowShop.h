@@ -54,7 +54,7 @@
 eoEvalFuncCounter<FlowShop> & do_make_eval(eoParser& _parser, eoState& _state)
 {
     // benchmark file name
-    std::string benchmarkFileName = _parser.getORcreateParam(std::string(), "BenchmarkFile", "Benchmark file name (benchmarks are available at mistic.heig-vd.ch/taillard/problemes.dir/ordonnancement.dir/ordonnancement.html)", 'B',"Representation", true).value();
+    std::string benchmarkFileName = _parser.getORcreateParam(std::string(), "BenchmarkFile", "Benchmark file name", 'B',"Representation", true).value();
     if (benchmarkFileName == "") {
         std::string stmp = "*** Missing name of the benchmark file\n";
         stmp += "    Type '-B=the_benchmark_file_name' or '--BenchmarkFile=the_benchmark_file_name'\n";

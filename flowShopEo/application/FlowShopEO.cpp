@@ -59,14 +59,8 @@ int main(int argc, char* argv[])
             logToFile();
         }
 
-
         eoParser parser(argc, argv);  // for user-parameter reading
         eoState state;                // to keep all things allocated
-
-        //make_parallel(parser);
-        // help ?
-        //make_help(parser);
-
         
         /*** the representation-dependent things ***/
 
@@ -86,6 +80,9 @@ int main(int argc, char* argv[])
         // algorithm
         eoAlgo<FlowShop>& algo = do_make_algo_scalar(parser, state, eval, checkpoint, op);
         
+        // called after all parameters have been read
+        make_help(parser);
+
         // MPI requirements
         /* Before a worker starts its algorithm, how does it reinits the population?
          * This one (ReuseSamePopEA) doesn't modify the population after a start, so

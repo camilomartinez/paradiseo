@@ -31,7 +31,7 @@
 --recomputeFitness=0                       # -r : Recompute the fitness after re-loading the pop.?
 #--saveFrequency=                          # Save every F generation (0 = only final state, absent = never)
 --saveTimeInterval=0                       # Save every T seconds (0 or absent = never)
---status=./FlowShopEA.status               # Status file
+--status=./FlowShopMOEA.status               # Status file
 
 ######    Representation          ######
 --BenchmarkFile=instances/020_10_01.txt    # -B : Benchmark file name REQUIRED
