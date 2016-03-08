@@ -67,8 +67,8 @@ eoEvalFuncCounter<FlowShop> & do_make_eval(eoParser& _parser, eoState& _state)
     unsigned int N = fParser.getN();
     std::vector< std::vector<unsigned int> > p = fParser.getP();
     // Debug benchmark file reading
-    eo::log << eo::debug << "Benchmark ";
-    fParser.printOn(eo::log << eo::logging);
+    eo::log << eo::debug << "Benchmark: " << benchmarkFileName << std::endl;
+    fParser.printOn(eo::log << eo::xdebug);
     // build of the initializer (a pointer, stored in the eoState)
     FlowShopEval* plainEval = new FlowShopEval(M, N, p);
     // turn that object into an evaluation counter
