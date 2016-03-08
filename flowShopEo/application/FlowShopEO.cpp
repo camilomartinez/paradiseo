@@ -20,6 +20,8 @@
 #include <do/make_algo_scalar.h>
 // simple call to the algo
 #include <do/make_run.h>
+// random number generator
+#include <utils/eoRNG.h>
 // checks for help demand, and writes the status file and make_help; in libutils
 void make_help(eoParser & _parser);
 // definition of the representation
@@ -46,8 +48,8 @@ private:
         // Any individual received so far?        
         if (_data->bests.size() > 0)
         {
-            // Send the best so far
-            individual = _data->bests.best_element();
+            // Send one of the bests
+            individual = eo::rng.choice(_data->bests);
         }
         _data->comm.send( wrkRank, eo::mpi::Channel::Messages, individual );
     }
@@ -125,6 +127,49 @@ private:
     int runCount;
 };
 
+struct UpdateBest : public HandleResponseMultiStart<FlowShop>
+{
+    void operator()(int wrkRank)
+    {
+        int master = Node::comm().rank();
+        FlowShop workerBest;
+        _data->comm.recv( wrkRank, eo::mpi::Channel::Messages, workerBest );
+        eoPop<FlowShop>& globalBests = _data->bests;
+        if (globalBests.size() == 0)
+        {
+            eo::log << eo::logging << "[M" << master << "] ";
+            eo::log << eo::logging << "Initial best from W" << wrkRank << " fitness " << workerBest.fitness() << std::endl;
+            // Add first individual to bests
+            globalBests.push_back(workerBest);
+            return;
+        }
+        FlowShop globalBest = globalBests.best_element();        
+        // Is it better?
+        if (globalBest < workerBest)
+        {
+            eo::log << eo::logging << "[M" << master << "] ";
+            eo::log << eo::logging << "Updating best from W" << wrkRank << " fitness " << workerBest.fitness();
+            eo::log << eo::logging << ", previous was " << globalBest.fitness() << std::endl;
+            // Clear all elements
+            globalBests.clear();
+            globalBests.push_back(workerBest);
+        } else if (globalBest.fitness() == workerBest.fitness()) { // Is it equally good but different
+            bool isDifferent = false;
+            for (unsigned i=0; i < globalBests.size(); i++) {
+                if ( globalBests[i] != workerBest ) {
+                    isDifferent = true;
+                    break;
+                }
+            }
+            if (isDifferent) {
+                eo::log << eo::logging << "[M" << master << "] ";
+                eo::log << eo::logging << "Adding new best from W" << wrkRank << " fitness " << workerBest.fitness() << std::endl;
+                globalBests.push_back(workerBest);
+            }
+        }     
+    }
+};
+
 void logToFile() {
     std::ostringstream logfile;
     int rank = Node::comm().rank();
@@ -194,19 +239,20 @@ int main(int argc, char* argv[])
         MultiStartStore<FlowShop> store( algo, DEFAULT_MASTER, resetAlgo, getSeeds);
         store.wrapSendTask( new SendBest() );
         store.wrapProcessTask( new RunAlgo() );
+        store.wrapHandleResponse( new UpdateBest() );
         
         DynamicAssignmentAlgorithm assign;
         // Creates the multistart job and runs it.
         // The last argument indicates how many runs to launch.
-        MultiStart<FlowShop> msjob( assign, DEFAULT_MASTER, store, 10 );
+        MultiStart<FlowShop> msjob( assign, DEFAULT_MASTER, store, 20 );
         msjob.run();
 
         if( msjob.isMaster() )
         {
             eo::log << eo::logging << std::endl;
+            eo::log << eo::logging << "Best fitness found: " << msjob.best_individuals().best_element().fitness()  << std::endl;
             eo::log << eo::logging << "Best individuals: size ";
             msjob.best_individuals().sortedPrintOn(eo::log << eo::logging);
-            eo::log << eo::logging << std::endl << "Global best individual " << std::endl << msjob.best_individuals().best_element() << std::endl;
         }
         return 0;
     }
