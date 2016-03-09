@@ -220,9 +220,6 @@ int main(int argc, char* argv[])
         // algorithm
         eoAlgo<FlowShop>& algo = do_make_algo_scalar(parser, state, eval, checkpoint, op);
         
-        // called after all parameters have been read
-        make_help(parser);
-
         // MPI requirements
         /* Before a worker starts its algorithm, how does it reinits the population?
          * This one (ReuseSamePopEA) doesn't modify the population after a start, so
@@ -242,9 +239,16 @@ int main(int argc, char* argv[])
         store.wrapHandleResponse( new UpdateBest() );
         
         DynamicAssignmentAlgorithm assign;
+        // How many runs (if missing, should have been set)
+        int numberOfRuns = parser.valueOf<unsigned int>("numRuns");
         // Creates the multistart job and runs it.
         // The last argument indicates how many runs to launch.
-        MultiStart<FlowShop> msjob( assign, DEFAULT_MASTER, store, 20 );
+        MultiStart<FlowShop> msjob( assign, DEFAULT_MASTER, store, numberOfRuns );
+
+        // called after all parameters have been read
+        make_help(parser);
+
+        // Execute the job
         msjob.run();
 
         if( msjob.isMaster() )

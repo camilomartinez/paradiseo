@@ -39,8 +39,10 @@
 #define MAKE_EVAL_FLOWSHOP_H_
 
 
+#include <math.h>
 #include <utils/eoParser.h>
 #include <utils/eoState.h>
+#include <mpi/eoMpiNode.h>
 #include <eoEvalFuncCounter.h>
 #include <FlowShop.h>
 #include <FlowShopBenchmarkParser.h>
@@ -69,6 +71,30 @@ eoEvalFuncCounter<FlowShop> & do_make_eval(eoParser& _parser, eoState& _state)
     // Debug benchmark file reading
     eo::log << eo::debug << "Benchmark: " << benchmarkFileName << std::endl;
     fParser.printOn(eo::log << eo::xdebug);
+    // reading potential additional information
+    eoValueParam<bool> autoTotalTimeParam = _parser.getORcreateParam(false, "autoTotalTime", "Set total time according to benchmark", '\0', "Multistart");
+    eoValueParam<unsigned int>& numRunsParam = _parser.createParam((unsigned int)0, "numRuns", "Number of times the algo is started. If missing, twice the number of workers", '\0', "Multistart");
+    unsigned int nWorkers = eo::mpi::Node::comm().size() - 1;
+    if (autoTotalTimeParam.value()) {
+        if (!_parser.isItThere(numRunsParam)) {
+            numRunsParam.value( nWorkers * 2 );
+        } 
+        unsigned int numRuns = numRunsParam.value();
+        if (numRuns < 1) {
+            std::string stmp = "Number of runs (numRuns) should be positive";
+            throw std::runtime_error(stmp.c_str());
+        }        
+        // termination is n*(m/2)*60 milliseconds
+        // taken from Vallada et al. (2007)
+        // "Cooperative metaheuristics for the permutation flowshop scheduling problem"
+        unsigned long totalTime = M * N * 30; // in milliseconds
+        unsigned long eachRunTime = (unsigned long) round(totalTime / double(numRuns) / 1000); // in seconds
+        eoValueParam<unsigned long>& maxTimeParam = _parser.setORcreateParam(eachRunTime, "maxTime", "Maximum running time in seconds set from eval", 'T', "Stopping criterion");
+        unsigned long wallclockTime = (unsigned long) ceil(numRuns / double(nWorkers)) * eachRunTime;
+        // Debug total run time
+        eo::log << eo::debug << "Number of runs: " << numRuns << std::endl;
+        eo::log << eo::debug << "Expected total time: " << (eachRunTime * numRuns) << ", max time (each run): " << eachRunTime << ", expected wallclock time: " << wallclockTime << std::endl;        
+    }    
     // build of the initializer (a pointer, stored in the eoState)
     FlowShopEval* plainEval = new FlowShopEval(M, N, p);
     // turn that object into an evaluation counter
