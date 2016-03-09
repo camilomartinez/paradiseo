@@ -13,8 +13,8 @@
 --weakElitism=1                            # -w : Old best parent replaces new worst offspring *if necessary*
 
 ### MULTISTART #####################################################################
---autoTotalTime=1                          # Set total time according to benchmark
---numRuns=20                                 # Number of times the algo is started. If missing, twice the number of workers
+--totalTime=0                              # Global total execution time in seconds, 0 = Adjust according to benchmark
+#--numRuns=20                              # Number of times the algo is started. If missing, twice the number of workers
 
 ### OUTPUT #########################################################################
 --useEval=0                                # Use nb of eval. as counter (vs nb of gen.)
