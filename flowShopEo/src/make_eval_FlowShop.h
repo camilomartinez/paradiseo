@@ -42,7 +42,6 @@
 #include <math.h>
 #include <utils/eoParser.h>
 #include <utils/eoState.h>
-#include <mpi/eoMpiNode.h>
 #include <eoEvalFuncCounter.h>
 #include <FlowShop.h>
 #include <FlowShopBenchmarkParser.h>
@@ -72,20 +71,18 @@ eoEvalFuncCounter<FlowShop> & do_make_eval(eoParser& _parser, eoState& _state)
     eo::log << eo::debug << "Benchmark: " << benchmarkFileName << std::endl;
     fParser.printOn(eo::log << eo::xdebug);
     // reading potential additional information
-    // Number of runs
-    unsigned int nWorkers = eo::mpi::Node::comm().size() - 1;
-    eoValueParam<unsigned int>& numRunsParam = _parser.createParam((unsigned int)0, "numRuns", "Number of times the algo is started. If missing, twice the number of workers", '\0', "Multistart");
-    if (!_parser.isItThere(numRunsParam)) {
-        numRunsParam.value( nWorkers * 2 );
+    eoValueParam<unsigned int>& iterationsParam = _parser.createParam((unsigned int)0, "iterations", "Number of times the algo is started on each worker. missing = 2", '\0', "Multistart");
+    if (!_parser.isItThere(iterationsParam)) {
+        iterationsParam.value(2);
     }
-    unsigned int numRuns = numRunsParam.value();
-    if (numRuns < 1) {
-        std::string stmp = "Number of runs (numRuns) should be positive";
+    unsigned int iterations = iterationsParam.value();
+    if (iterations < 1) {
+        std::string stmp = "Number of iterations (iterations) should be positive";
         throw std::runtime_error(stmp.c_str());
     }
-    unsigned long eachRunTime = (unsigned long) 0;
+    unsigned long eachIterationTime = (unsigned long) 0;
     // Execution time
-    eoValueParam<unsigned long> totalTimeParam = _parser.createParam((unsigned long)0, "totalTime", "Global total execution time in seconds, 0 = Adjust according to benchmark", '\0', "Multistart");
+    eoValueParam<unsigned long> totalTimeParam = _parser.createParam((unsigned long)0, "totalTime", "Desired wallclock time in seconds, 0 = Adjust according to benchmark", '\0', "Multistart");
     if (_parser.isItThere(totalTimeParam)) {
         unsigned long totalTime;
         if (totalTimeParam.value() == 0) {
@@ -96,21 +93,20 @@ eoEvalFuncCounter<FlowShop> & do_make_eval(eoParser& _parser, eoState& _state)
         } else {
             totalTime = totalTimeParam.value();
         }
-        eachRunTime = (unsigned long) round(totalTime / double(numRuns)); // in seconds
-        eoValueParam<unsigned long>& maxTimeParam = _parser.setORcreateParam(eachRunTime, "maxTime", "Maximum running time in seconds set from eval", 'T', "Stopping criterion");
+        eachIterationTime = (unsigned long) ceil(totalTime / double(iterations)); // in seconds
+        eoValueParam<unsigned long>& maxTimeParam = _parser.setORcreateParam(eachIterationTime, "maxTime", "Maximum running time per iteration in seconds", 'T', "Stopping criterion");
     } else {
-        eoValueParam<unsigned long>& maxTimeParam = _parser.createParam((unsigned long)(0), "maxTime", "Maximum running time in seconds (0 = none)", 'T', "Stopping criterion");
+        eoValueParam<unsigned long>& maxTimeParam = _parser.createParam((unsigned long)(0), "maxTime", "Maximum running time per iteration in seconds", 'T', "Stopping criterion");
         if (_parser.isItThere(maxTimeParam)) {
-            eachRunTime = maxTimeParam.value();
+            eachIterationTime = maxTimeParam.value();
         }
     }
     // Debug total run time
-    if (eachRunTime > 0) {
-        eo::log << eo::debug << "Number of runs: " << numRuns << std::endl;
-        unsigned long wallclockTime = (unsigned long) ceil(numRuns / double(nWorkers)) * eachRunTime;
-        eo::log << eo::debug << "Expected total time (s): " << (eachRunTime * numRuns);
-        eo::log << eo::debug << ", each run taking: " << eachRunTime;
-        eo::log << eo::debug << ", expected wallclock time: " << wallclockTime << std::endl;
+    if (eachIterationTime > 0) {
+        eo::log << eo::logging << "Number of iterations per worker: " << iterations << std::endl;
+        unsigned long wallclockTime = (unsigned long) iterations * eachIterationTime;
+        eo::log << eo::logging << "Expected total time (s): " << (eachIterationTime * iterations);
+        eo::log << eo::logging << ", each iteration taking: " << eachIterationTime << std::endl;
     }
 
     // build of the initializer (a pointer, stored in the eoState)

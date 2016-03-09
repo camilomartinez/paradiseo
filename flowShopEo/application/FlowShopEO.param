@@ -13,8 +13,8 @@
 --weakElitism=1                            # -w : Old best parent replaces new worst offspring *if necessary*
 
 ### MULTISTART #####################################################################
---totalTime=0                              # Global total execution time in seconds, 0 = Adjust according to benchmark
-#--numRuns=20                              # Number of times the algo is started. If missing, twice the number of workers
+--totalTime=0                              # Desired wallclock time in seconds, 0 = Adjust according to benchmark
+--iterations=10                            # Number of times the algo is started on each worker. missing = 2
 
 ### OUTPUT #########################################################################
 --useEval=0                                # Use nb of eval. as counter (vs nb of gen.)
@@ -47,7 +47,7 @@
 # --minGen=0                               # -g : Minimum number of generations
 --maxEval=0                                # -E : Maximum number of evaluations (0 = none)
 # --targetFitness=0                        # -T : Stop when fitness reaches
---maxTime=5                               # -T : Maximum running time in seconds (0 = none)
+--maxTime=5                                # -T : Maximum running time per iteration in seconds (0 = none)
 --CtrlC=1                                  # -C : Terminate current generation upon Ctrl C
 # --monitor-with-CtrlC=0                   # Monitor current generation upon Ctrl C
 

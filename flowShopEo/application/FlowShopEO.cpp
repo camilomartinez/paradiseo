@@ -239,8 +239,12 @@ int main(int argc, char* argv[])
         store.wrapHandleResponse( new UpdateBest() );
         
         DynamicAssignmentAlgorithm assign;
-        // How many runs (if missing, should have been set)
-        int numberOfRuns = parser.valueOf<unsigned int>("numRuns");
+        // How many iterations (if missing, should have been set)
+        // Number of runs
+        unsigned int iterations = parser.valueOf<unsigned int>("iterations");
+        unsigned int nWorkers = eo::mpi::Node::comm().size() - 1;
+        // number of runs is just iterations x workers
+        unsigned int numberOfRuns = iterations * nWorkers;
         // Creates the multistart job and runs it.
         // The last argument indicates how many runs to launch.
         MultiStart<FlowShop> msjob( assign, DEFAULT_MASTER, store, numberOfRuns );
