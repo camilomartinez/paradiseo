@@ -2,7 +2,7 @@
 
 DIR_TO_PACK=flowShopEo
 BUILD_DIR=$DIR_TO_PACK"/build"
-OUTPUT_DIR=$DIR_TO_PACK"_bin"
+OUTPUT_DIR=flowShop_bin
 
 # prev file
 rm -rf $OUTPUT_DIR.tgz
@@ -13,9 +13,10 @@ mkdir $OUTPUT_DIR/application
 
 # Executable
 cp $BUILD_DIR/application/FlowShop* $OUTPUT_DIR/application/
-# Run script removing build dir
-cp $DIR_TO_PACK/*Run.sh $OUTPUT_DIR/
-sed -i 's@build/application@application@g' $OUTPUT_DIR/*Run.sh
+# Copy all resources on package
+cp -r package/* $OUTPUT_DIR/
+# Make sure host is inside app for easy reference
+mv $OUTPUT_DIR/hosts $OUTPUT_DIR/application/
 # Benchmark files
 cp -r $DIR_TO_PACK/application/instances $OUTPUT_DIR/application/
 # Make sure to copy parameters

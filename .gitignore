@@ -31,3 +31,5 @@ website/paradiseo_logo.png
 
 .vagrant/
 *.tgz
+config
+ubuntu-cluster-private.pem
