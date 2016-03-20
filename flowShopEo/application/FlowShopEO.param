@@ -3,7 +3,7 @@
 ### GENERAL ########################################################################
 # --help=0                                 # -h : Prints this message
 # --stopOnUnknownParam=1                   # Stop if unkown param entered
---seed=118337975                           # -S : Random number seed
+#--seed=118337975                           # -S : Random number seed
 
 ### EVOLUTION ENGINE ###############################################################
 # --popSize=20                             # -P : Population Size
@@ -39,7 +39,7 @@
 # --status=FlowShopEO.status               # Status file
 
 ### REPRESENTATION #################################################################
---BenchmarkFile=instances/ta054.txt        # -B : Benchmark file name REQUIRED 
+--BenchmarkFile=instances/ta023.txt        # -B : Benchmark file name REQUIRED 
 
 ### STOPPING CRITERION #############################################################
 --maxGen=0                                 # -G : Maximum number of generations () = none)
@@ -55,5 +55,5 @@
 # --crossRate=1                            # Relative rate for the only crossover
 # --shiftMutRate=0.5                       # Relative rate for shift mutation
 # --exchangeMutRate=0.5                    # Relative rate for exchange mutation
-# --pCross=0.25                            # -c : Probability of Crossover
-# --pMut=0.35                              # -m : Probability of Mutation
+--pCross=0.5                            # -c : Probability of Crossover
+--pMut=0.7                              # -m : Probability of Mutation
