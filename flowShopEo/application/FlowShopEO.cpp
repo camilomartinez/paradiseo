@@ -81,8 +81,8 @@ private:
         // Check if received individual is valid and if local is worse (always maximizing)
         if (!globalBest.invalid() && _data->pop.best_element() < globalBest)
         {
-            eo::log << eo::logging << "Updating best fitness with global best " << globalBest.fitness();
-            eo::log << eo::logging << ", previous best was " << _data->pop.best_element().fitness() << std::endl;
+            eo::log << eo::logging << "Updating best from global fitness " << globalBest.fitness();
+            eo::log << eo::logging << ", previous local was " << _data->pop.best_element().fitness() << std::endl;
             // Replace worst element
             typename eoPop<FlowShop>::iterator itWorse = _data->pop.it_worse_element();
             (*itWorse) = globalBest;
@@ -162,8 +162,8 @@ struct UpdateBest : public HandleResponseMultiStart<FlowShop>
                 }
             }
             if (isDifferent) {
-                eo::log << eo::logging << "[M" << master << "] ";
-                eo::log << eo::logging << "Adding new best from W" << wrkRank << " fitness " << workerBest.fitness() << std::endl;
+                eo::log << eo::debug << "[M" << master << "] ";
+                eo::log << eo::debug << "Adding new best from W" << wrkRank << " fitness " << workerBest.fitness() << std::endl;
                 globalBests.push_back(workerBest);
             }
         }     
