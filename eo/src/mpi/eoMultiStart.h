@@ -271,7 +271,7 @@ namespace eo
                     {
                         int seed;
                         eo::mpi::Node::comm().recv( _masterRank, eo::mpi::Channel::Commands, seed );
-                        eo::log << eo::debug << eo::mpi::Node::comm().rank() << "- Seed: " << seed << std::endl;
+                        eo::log << eo::logging << "Seed: " << seed << std::endl;
                         eo::rng.reseed( seed );
                     }
                 }

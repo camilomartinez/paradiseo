@@ -109,8 +109,8 @@ private:
     void printPopulation()
     {
         int rank = Node::comm().rank();
-        eo::log << eo::logging << "[W" << rank << "] Population run #" << runCount << " size: ";
-        _data->pop.printOn(eo::log << eo::logging);
+        eo::log << eo::xdebug << "[W" << rank << "] Population run #" << runCount << " size: ";
+        _data->pop.printOn(eo::log << eo::xdebug);
     }
 
     void printBest()
@@ -184,14 +184,13 @@ int main(int argc, char* argv[])
     {
         Node::init( argc, argv );
         // General log level
-        // eo::log << eo::setlevel( eo::logging );
-        eo::log << eo::setlevel( eo::debug );
+        eo::log << eo::setlevel( eo::logging );
         int rank = Node::comm().rank();
         if (rank == DEFAULT_MASTER)
         {
             // master specific init
-            eo::log << eo::setlevel( eo::debug );
-            //logToFile();
+            //eo::log << eo::setlevel( eo::debug );
+            logToFile();
         }
         else
         {
@@ -232,6 +231,11 @@ int main(int argc, char* argv[])
          * This functors indicates that seeds should be random values.
          */
         DummyGetSeeds<FlowShop> getSeeds;
+        // Log the master seed
+        if (rank == DEFAULT_MASTER)
+        {
+            eo::log << eo::logging << "Seed: " << parser.valueOf<uint32_t>("seed") << endl;
+        }
         // Builds the store
         MultiStartStore<FlowShop> store( algo, DEFAULT_MASTER, resetAlgo, getSeeds);
         store.wrapSendTask( new SendBest() );
@@ -258,9 +262,12 @@ int main(int argc, char* argv[])
         if( msjob.isMaster() )
         {
             eo::log << eo::logging << std::endl;
+            eo::log << eo::logging << "Number of best individuals found: " << msjob.best_individuals().size() << std::endl;
             eo::log << eo::logging << "Best fitness found: " << msjob.best_individuals().best_element().fitness()  << std::endl;
-            eo::log << eo::logging << "Best individuals: size ";
-            msjob.best_individuals().sortedPrintOn(eo::log << eo::logging);
+            eo::log << eo::logging << "Sample best individual: " << std::endl;
+            eo::log << eo::logging << msjob.best_individuals().best_element() << std::endl;
+            // This should be the only output
+            std::cout << msjob.best_individuals().best_element().fitness() << std::endl;
         }
         return 0;
     }
