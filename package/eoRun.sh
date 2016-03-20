@@ -6,4 +6,4 @@
 (cd application && \
  rm -rf Res && \
  rm -f log_* && \
- time mpirun --hostfile hosts -np 21 --bynode FlowShopEO @FlowShopEO.param)
+ time mpirun --hostfile hosts -np 21 --bynode --nooversubscribe FlowShopEO @FlowShopEO.param)

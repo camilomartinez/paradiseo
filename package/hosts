@@ -1,6 +1,6 @@
 master          slots=1 max_slots=1
-computenode1    slots=1 max_slots=8
-computenode2    slots=1 max_slots=8
-computenode3    slots=1 max_slots=8
-computenode4    slots=1 max_slots=8
-computenode5    slots=1 max_slots=8
+computenode1    slots=8 max_slots=8
+computenode2    slots=8 max_slots=8
+computenode3    slots=8 max_slots=8
+computenode4    slots=8 max_slots=8
+computenode5    slots=8 max_slots=8

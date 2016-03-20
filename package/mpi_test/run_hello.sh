@@ -1,1 +1,1 @@
-mpirun --hostfile hosts -np 21 --bynode hello_mpi | sort
+mpirun --hostfile hosts -np 21 --bynode --nooversubscribe hello_mpi | sort
