@@ -80,23 +80,21 @@ eoEvalFuncCounter<FlowShop> & do_make_eval(eoParser& _parser, eoState& _state)
         std::string stmp = "Number of iterations (iterations) should be positive";
         throw std::runtime_error(stmp.c_str());
     }
-    unsigned long eachIterationTime = (unsigned long) 0;
+    double eachIterationTime = double(0.0);
     // Execution time
     eoValueParam<unsigned long> totalTimeParam = _parser.createParam((unsigned long)0, "totalTime", "Desired wallclock time in seconds, 0 = Adjust according to benchmark", '\0', "Multistart");
     if (_parser.isItThere(totalTimeParam)) {
-        unsigned long totalTime;
         if (totalTimeParam.value() == 0) {
             // termination is n*(m/2)*60 milliseconds
             // taken from Vallada et al. (2007)
             // "Cooperative metaheuristics for the permutation flowshop scheduling problem"
-            totalTime = round(M * N * 0.03); // in seconds        
+            eachIterationTime = (double(M * N * 30) / iterations) / 1000; // in seconds        
         } else {
-            totalTime = totalTimeParam.value();
+            eachIterationTime = totalTimeParam.value() / double(iterations); // in seconds        
         }
-        eachIterationTime = (unsigned long) ceil(totalTime / double(iterations)); // in seconds
-        eoValueParam<unsigned long>& maxTimeParam = _parser.setORcreateParam(eachIterationTime, "maxTime", "Maximum running time per iteration in seconds", 'T', "Stopping criterion");
+        eoValueParam<double>& maxTimeParam = _parser.setORcreateParam(eachIterationTime, "maxTime", "Maximum running time per iteration in seconds", 'T', "Stopping criterion");
     } else {
-        eoValueParam<unsigned long>& maxTimeParam = _parser.createParam((unsigned long)(0), "maxTime", "Maximum running time per iteration in seconds", 'T', "Stopping criterion");
+        eoValueParam<double>& maxTimeParam = _parser.createParam(double(0.0), "maxTime", "Maximum running time per iteration in seconds", 'T', "Stopping criterion");
         if (_parser.isItThere(maxTimeParam)) {
             eachIterationTime = maxTimeParam.value();
         }
@@ -104,8 +102,7 @@ eoEvalFuncCounter<FlowShop> & do_make_eval(eoParser& _parser, eoState& _state)
     // Debug total run time
     if (eachIterationTime > 0) {
         eo::log << eo::logging << "Number of iterations per worker: " << iterations << std::endl;
-        unsigned long wallclockTime = (unsigned long) iterations * eachIterationTime;
-        eo::log << eo::logging << "Expected total time (s): " << (eachIterationTime * iterations);
+        eo::log << eo::logging << "Expected total time (s): " << eachIterationTime * iterations;
         eo::log << eo::logging << ", each iteration taking: " << eachIterationTime << std::endl;
     }
 

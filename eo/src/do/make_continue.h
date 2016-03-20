@@ -143,7 +143,7 @@ eoCombinedContinue<Indi> & do_make_continue(eoParser& _parser, eoState& _state, 
         continuator = make_combinedContinue<Indi>(continuator, fitCont);
       }
     // maxTime
-    eoValueParam<unsigned long>& maxTimeParam = _parser.getORcreateParam((unsigned long)(0), "maxTime", "Maximum running time in seconds (0 = none)", 'T', "Stopping criterion");
+    eoValueParam<double>& maxTimeParam = _parser.getORcreateParam(double(0.0), "maxTime", "Maximum running time in seconds (0 = none)", 'T', "Stopping criterion");
     if (maxTimeParam.value()) // positive: -> define and store
     {
       eoTimeContinue<Indi> *timeCont = new eoTimeContinue<Indi>(maxTimeParam.value());

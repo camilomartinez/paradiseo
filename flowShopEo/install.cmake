@@ -26,6 +26,8 @@ SET(PARADISEO_PEO_BIN_DIR "${PARADISEO_DIR}/peo/build" CACHE PATH "ParadisEO-PEO
 
 SET(PARADISEO_MPI_SRC_DIR "${PARADISEO_DIR}/eo/src/mpi" CACHE PATH "ParadisEO-PEO source directory" FORCE)
 
+SET(CMAKE_CXX_FLAGS "-std=c++11")
+
 #########################################################################################################
 
 

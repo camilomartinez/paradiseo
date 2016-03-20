@@ -25,11 +25,12 @@
 #ifndef _EOTIMECONTINUE_H
 #define _EOTIMECONTINUE_H
 
-#include <ctime>
-
+#include <chrono>
 #include <eoContinue.h>
 #include <eoResettable.h>
 #include <utils/eoLogger.h>
+
+using namespace std::chrono;
 
 /**
  * Termination condition until a running time is reached.
@@ -45,9 +46,9 @@ public:
      * Ctor.
      * @param _max maximum running time
      */
-    eoTimeContinue(time_t _max): max(_max)
+    eoTimeContinue(double _max): max(_max)
     {
-        start = time(NULL);
+        start = steady_clock::now();
     }
 
 
@@ -57,7 +58,9 @@ public:
      */
     virtual bool operator() (const eoPop < EOT > & _pop)
     {
-        time_t elapsed = (time_t) difftime(time(NULL), start);
+        steady_clock::time_point end = steady_clock::now();
+        duration<double> diff = end-start;
+        double elapsed = diff.count();
         if (elapsed >= max)
         {
             eo::log << eo::progress << "STOP in eoTimeContinue: Reached maximum time [" << elapsed << "/" << max << "]" << std::endl;
@@ -77,17 +80,18 @@ public:
 
     virtual void reset()
     {
-        time_t elapsed = (time_t) difftime(time(NULL), start);
-        eo::log << eo::progress << "RESET in eoTimeContinue after " << elapsed << " seconds" << std::endl;
-        start = time(NULL);
+        steady_clock::time_point end = steady_clock::now();
+        duration<double> diff = end-start;
+        eo::log << eo::progress << "RESET in eoTimeContinue after " << diff.count() << " seconds" << std::endl;
+        start = steady_clock::now();
     }
 
 private:
 
     /** maximum running time */
-    time_t max;
+    double max;
     /** starting time */
-    time_t start;
+    steady_clock::time_point start;
 
 };
 
