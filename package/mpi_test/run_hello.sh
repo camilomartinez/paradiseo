@@ -1,0 +1,1 @@
+mpirun --hostfile hosts -np 21 --bynode hello_mpi | sort
