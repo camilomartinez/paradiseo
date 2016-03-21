@@ -33,3 +33,4 @@ website/paradiseo_logo.png
 *.tgz
 config
 ubuntu-cluster-private.pem
+flowShop_bin_exp_1/

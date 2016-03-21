@@ -39,7 +39,7 @@
 # --status=FlowShopEO.status               # Status file
 
 ### REPRESENTATION #################################################################
---BenchmarkFile=instances/ta023.txt        # -B : Benchmark file name REQUIRED 
+#--BenchmarkFile=instances/ta023.txt        # -B : Benchmark file name REQUIRED 
 
 ### STOPPING CRITERION #############################################################
 --maxGen=0                                 # -G : Maximum number of generations () = none)
