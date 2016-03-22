@@ -9,3 +9,6 @@ mkdir $OUTPUT_DIR
 
 # filter fitness
 perl process_fitness.pl $EXP_DIR'/application/log_fitness.txt' $OUTPUT_DIR'/fitness_only.txt'
+
+# filter fitness
+perl process_time.pl $EXP_DIR'/application/log_time.txt' $OUTPUT_DIR'/time_only.txt'
